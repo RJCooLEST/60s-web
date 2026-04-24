@@ -23,6 +23,7 @@ import {
 	LayoutGrid,
 	Loader2,
 	MapPin,
+	Image as ImageIcon,
 	Newspaper,
 	Palette,
 	QrCode,
@@ -41,7 +42,7 @@ import {
 	UserRound,
 	X,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
 	type FormEvent,
 	useCallback,
@@ -90,10 +91,17 @@ type SettingsState = {
 
 type PageId = "home" | "hot" | "news" | "weather" | "tools" | "settings";
 type ToolId = "translate" | "qrcode" | "password" | "palette";
+type SearchProviderId = "site" | "bing" | "google" | "chatgpt" | "doubao";
+type WallpaperMode = "default" | "mint" | "paper" | "dawn" | "custom";
 type AvatarState = {
 	mode: "default" | "upload" | "qq";
 	src?: string;
 	qq?: string;
+	updatedAt?: number;
+};
+type WallpaperState = {
+	mode: WallpaperMode;
+	src?: string;
 	updatedAt?: number;
 };
 
@@ -110,6 +118,8 @@ const STORAGE_KEYS = {
 	city: "60s-web:city",
 	settings: "60s-web:settings",
 	avatar: "60s-web:avatar",
+	searchProvider: "60s-web:search-provider",
+	wallpaper: "60s-web:wallpaper",
 } as const;
 
 const nav = [
@@ -127,6 +137,30 @@ const hotTabs = [
 	{ id: "bili", label: "B站", path: "/bili" },
 	{ id: "douyin", label: "抖音", path: "/douyin" },
 	{ id: "toutiao", label: "头条", path: "/toutiao" },
+];
+
+const searchProviders: Array<{
+	id: SearchProviderId;
+	label: string;
+	sub: string;
+}> = [
+	{ id: "site", label: "站内", sub: "接口" },
+	{ id: "bing", label: "Bing", sub: "网页" },
+	{ id: "google", label: "Google", sub: "网页" },
+	{ id: "chatgpt", label: "ChatGPT", sub: "问答" },
+	{ id: "doubao", label: "豆包", sub: "对话" },
+];
+
+const wallpaperOptions: Array<{
+	id: WallpaperMode;
+	label: string;
+	sub: string;
+}> = [
+	{ id: "default", label: "默认", sub: "清爽渐变" },
+	{ id: "mint", label: "薄荷", sub: "轻绿色调" },
+	{ id: "paper", label: "纸面", sub: "干净留白" },
+	{ id: "dawn", label: "晨光", sub: "暖色氛围" },
+	{ id: "custom", label: "自定义", sub: "本地图片" },
 ];
 
 const toolDefinitions: ToolDefinition[] = [
@@ -270,9 +304,15 @@ export function App() {
 	const [query, setQuery] = useState("");
 	const [activePage, setActivePage] = useState<PageId>("home");
 	const [activeTool, setActiveTool] = useState<ToolId>("translate");
+	const [searchProvider, setSearchProvider] = useState<SearchProviderId>(() =>
+		readStoredValue(STORAGE_KEYS.searchProvider, "site") as SearchProviderId,
+	);
 	const [hotTab, setHotTab] = useState(hotTabs[0]);
 	const [avatar, setAvatar] = useState<AvatarState>(() =>
 		readStoredJson(STORAGE_KEYS.avatar, { mode: "default" }),
+	);
+	const [wallpaper, setWallpaper] = useState<WallpaperState>(() =>
+		readStoredJson(STORAGE_KEYS.wallpaper, { mode: "default" }),
 	);
 	const [settings, setSettings] = useState<SettingsState>(() =>
 		readStoredJson(STORAGE_KEYS.settings, {
@@ -394,6 +434,14 @@ export function App() {
 		writeStoredJson(STORAGE_KEYS.avatar, avatar);
 	}, [avatar]);
 
+	useEffect(() => {
+		writeStoredValue(STORAGE_KEYS.searchProvider, searchProvider);
+	}, [searchProvider]);
+
+	useEffect(() => {
+		writeStoredJson(STORAGE_KEYS.wallpaper, wallpaper);
+	}, [wallpaper]);
+
 	const reloadAll = () => {
 		daily.reload();
 		weather.reload();
@@ -407,8 +455,21 @@ export function App() {
 		hitokoto.reload();
 	};
 
+	const runSearch = () => {
+		const keyword = query.trim();
+		if (!keyword) {
+			setActivePage("home");
+			return;
+		}
+		if (searchProvider === "site") {
+			setActivePage("tools");
+			return;
+		}
+		window.open(buildSearchTarget(searchProvider, keyword), "_blank", "noopener,noreferrer");
+	};
+
 	return (
-		<div className="app-shell">
+		<div className="app-shell" style={getWallpaperStyle(wallpaper)}>
 			<Header
 				city={city}
 				setCity={setCity}
@@ -420,20 +481,39 @@ export function App() {
 
 			<main>
 				<section className="search-band">
-					<div className="search-box">
+					<form
+						className="search-box"
+						onSubmit={(event) => {
+							event.preventDefault();
+							runSearch();
+						}}
+					>
 						<Search size={24} />
 						<input
 							value={query}
 							onChange={(event) => setQuery(event.target.value)}
-							placeholder="搜索接口名称、分类、路径或功能关键词..."
-						/>
-						<button
-							onClick={() =>
-								setActivePage(query.trim() ? "tools" : activePage)
+							placeholder={
+								searchProvider === "site"
+									? "搜索接口名称、分类、路径或功能关键词..."
+									: `输入关键词，用 ${searchProviders.find((item) => item.id === searchProvider)?.label} 搜索...`
 							}
-						>
+						/>
+						<button type="submit">
 							搜索
 						</button>
+					</form>
+					<div className="search-providers" aria-label="搜索目的地">
+						{searchProviders.map((provider) => (
+							<button
+								key={provider.id}
+								type="button"
+								className={searchProvider === provider.id ? "active" : ""}
+								onClick={() => setSearchProvider(provider.id)}
+							>
+								<b>{provider.label}</b>
+								<small>{provider.sub}</small>
+							</button>
+						))}
 					</div>
 					<div className="quick-chips" aria-label="快捷入口">
 						<button onClick={() => setActivePage("news")}>
@@ -542,6 +622,8 @@ export function App() {
 							settings={settings}
 							setSettings={setSettings}
 							reloadAll={reloadAll}
+							wallpaper={wallpaper}
+							setWallpaper={setWallpaper}
 						/>
 					</section>
 				)}
@@ -1624,6 +1706,8 @@ function SettingsPanel({
 	settings,
 	setSettings,
 	reloadAll,
+	wallpaper,
+	setWallpaper,
 	compact = false,
 }: {
 	apiBase: string;
@@ -1631,14 +1715,31 @@ function SettingsPanel({
 	settings: SettingsState;
 	setSettings: (value: SettingsState) => void;
 	reloadAll: () => void;
+	wallpaper?: WallpaperState;
+	setWallpaper?: (value: WallpaperState) => void;
 	compact?: boolean;
 }) {
+	const wallpaperInputRef = useRef<HTMLInputElement | null>(null);
 	const toggles: Array<[keyof SettingsState, string]> = [
 		["showWeather", "显示天气"],
 		["showHot", "显示热榜"],
 		["showNews", "显示新闻"],
 		["autoRefresh", "自动刷新"],
 	];
+	const handleWallpaperFile = (file?: File) => {
+		if (!file || !setWallpaper) return;
+		if (!file.type.startsWith("image/")) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			if (typeof reader.result !== "string") return;
+			setWallpaper({
+				mode: "custom",
+				src: reader.result,
+				updatedAt: Date.now(),
+			});
+		};
+		reader.readAsDataURL(file);
+	};
 	return (
 		<article
 			className={`card settings-panel ${compact ? "compact-settings" : ""}`}
@@ -1668,6 +1769,49 @@ function SettingsPanel({
 					<RefreshCw size={17} /> 刷新全部模块
 				</button>
 			</div>
+			{!compact && wallpaper && setWallpaper && (
+				<div className="wallpaper-settings">
+					<div className="settings-subtitle">
+						<span>
+							<ImageIcon size={18} /> 壁纸
+						</span>
+						<small>默认壁纸不加载外部资源，自定义图片只保存在本地浏览器</small>
+					</div>
+					<div className="wallpaper-grid">
+						{wallpaperOptions.map((option) => (
+							<button
+								type="button"
+								key={option.id}
+								className={wallpaper.mode === option.id ? "active" : ""}
+								onClick={() => {
+									if (option.id === "custom") {
+										wallpaperInputRef.current?.click();
+										return;
+									}
+									setWallpaper({ mode: option.id });
+								}}
+							>
+								<i className={`wallpaper-preview wallpaper-${option.id}`}>
+									{option.id === "custom" && wallpaper.src ? (
+										<img src={wallpaper.src} alt="" />
+									) : null}
+								</i>
+								<span>
+									<b>{option.label}</b>
+									<small>{option.sub}</small>
+								</span>
+							</button>
+						))}
+					</div>
+					<input
+						ref={wallpaperInputRef}
+						type="file"
+						accept="image/*"
+						hidden
+						onChange={(event) => handleWallpaperFile(event.target.files?.[0])}
+					/>
+				</div>
+			)}
 		</article>
 	);
 }
@@ -1931,48 +2075,49 @@ function Footer({ apiBase, updatedAt }: { apiBase: string; updatedAt?: Date }) {
 			<div className="footer-inner">
 				<div className="footer-left">
 					<a
-						className="footer-link brand-link"
+						className="footer-text-link brand-link"
 						href={API_REPO_URL}
 						target="_blank"
 						rel="noreferrer"
 					>
 						<img src="/favicon.png" alt="60s logo" width={18} height={18} />
-						<span>
-							<strong>60s</strong>
-							<small>API 项目</small>
-						</span>
+						<strong>60s</strong>
+						<small>API</small>
 						<Github size={15} />
 					</a>
+					<span className="footer-separator" />
 					<a
-						className="footer-link brand-link"
+						className="footer-text-link brand-link"
 						href={WEB_REPO_URL}
 						target="_blank"
 						rel="noreferrer"
 					>
 						<Github size={18} />
-						<span>
-							<strong>60s-web</strong>
-							<small>网页项目</small>
-						</span>
+						<strong>60s-web</strong>
+						<small>Web</small>
 					</a>
-					<span className="footer-link api-link">
+					<span className="footer-separator" />
+					<span className="footer-meta api-link">
 						<Globe2 size={16} />
 						{apiBase.replace(/^https?:\/\//, "")}
 					</span>
 				</div>
 				<div className="footer-right">
-					<span className="footer-badge ok">
+					<span className="footer-meta ok">
 						<strong>状态</strong>
 						正常
 					</span>
-					<span className="footer-badge version">
+					<span className="footer-dot" />
+					<span className="footer-meta version">
 						<strong>版本</strong>v{packageInfo.version}
 					</span>
-					<span className="footer-badge runtime">
+					<span className="footer-dot" />
+					<span className="footer-meta runtime">
 						<strong>缓存</strong>
 						10 分钟
 					</span>
-					<span className="footer-badge">
+					<span className="footer-dot" />
+					<span className="footer-meta">
 						<strong>最近同步</strong>
 						{updatedAt
 							? updatedAt.toLocaleTimeString("zh-CN", {
@@ -2081,6 +2226,45 @@ function getAvatarSrc(avatar: AvatarState) {
 	if (avatar.mode === "upload" && avatar.src) return avatar.src;
 	if (avatar.mode === "qq" && avatar.qq) return avatar.src || getQqAvatarUrl(avatar.qq);
 	return "/favicon.png";
+}
+
+function buildSearchTarget(provider: SearchProviderId, keyword: string) {
+	const query = encodeURIComponent(keyword);
+	if (provider === "bing") return `https://www.bing.com/search?q=${query}`;
+	if (provider === "google") return `https://www.google.com/search?q=${query}`;
+	if (provider === "chatgpt") return `https://chatgpt.com/?q=${query}`;
+	if (provider === "doubao") return `https://www.doubao.com/chat/?q=${query}`;
+	return "#";
+}
+
+function getWallpaperStyle(wallpaper: WallpaperState): CSSProperties {
+	if (wallpaper.mode === "custom" && wallpaper.src) {
+		return {
+			backgroundImage: `linear-gradient(180deg, rgba(246, 248, 248, 0.84), rgba(246, 248, 248, 0.9)), url("${wallpaper.src}")`,
+			backgroundSize: "cover",
+			backgroundPosition: "center",
+			backgroundAttachment: "fixed",
+		};
+	}
+	if (wallpaper.mode === "mint") {
+		return {
+			background:
+				"linear-gradient(135deg, rgba(15,155,142,0.16), rgba(37,99,235,0.08) 45%, rgba(246,248,248,1) 100%)",
+		};
+	}
+	if (wallpaper.mode === "paper") {
+		return {
+			background:
+				"linear-gradient(180deg, rgba(255,255,255,0.96), rgba(246,248,248,1)), radial-gradient(circle at 20% 18%, rgba(15,155,142,0.06), transparent 28rem)",
+		};
+	}
+	if (wallpaper.mode === "dawn") {
+		return {
+			background:
+				"linear-gradient(135deg, rgba(255,244,229,0.95), rgba(239,247,245,1) 52%, rgba(246,248,248,1))",
+		};
+	}
+	return {};
 }
 
 function readCurrencyRate(data: ExchangeRate | undefined, code: string) {
