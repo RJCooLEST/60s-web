@@ -32,7 +32,7 @@
 
 项目本身是纯前端应用，不依赖数据库或自建后端。默认使用 [vikiboss/60s](https://github.com/vikiboss/60s) 提供的公开 API，也支持在页面设置中切换为自托管 API 地址。
 
-测试案例：https://60s.dogxi.me/
+部署案例：https://60s.dogxi.me/
 
 ## 功能特性
 
