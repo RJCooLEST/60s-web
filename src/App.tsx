@@ -24,6 +24,7 @@ import {
 	LayoutGrid,
 	Loader2,
 	MapPin,
+	Moon,
 	Newspaper,
 	Palette,
 	QrCode,
@@ -94,6 +95,7 @@ type ToolId = "translate" | "qrcode" | "password" | "palette";
 type SearchProviderId = "site" | "bing" | "google" | "chatgpt" | "doubao";
 type WallpaperMode = "default" | "mint" | "paper" | "dawn" | "custom";
 type ChromeTheme = "classic" | "floating" | "minimal";
+type ColorTheme = "light" | "dark";
 type AvatarState = {
 	mode: "default" | "upload" | "qq";
 	src?: string;
@@ -122,6 +124,7 @@ const STORAGE_KEYS = {
 	searchProvider: "60s-web:search-provider",
 	wallpaper: "60s-web:wallpaper",
 	chromeTheme: "60s-web:chrome-theme",
+	colorTheme: "60s-web:color-theme",
 } as const;
 
 const nav = [
@@ -173,6 +176,15 @@ const chromeThemes: Array<{
 	{ id: "classic", label: "经典", sub: "固定栏" },
 	{ id: "floating", label: "悬浮", sub: "浮层卡片" },
 	{ id: "minimal", label: "极简", sub: "轻边界" },
+];
+
+const colorThemes: Array<{
+	id: ColorTheme;
+	label: string;
+	sub: string;
+}> = [
+	{ id: "light", label: "浅色", sub: "清爽白昼" },
+	{ id: "dark", label: "暗色", sub: "夜间低亮" },
 ];
 
 const toolDefinitions: ToolDefinition[] = [
@@ -323,6 +335,9 @@ export function App() {
 	const [chromeTheme, setChromeTheme] = useState<ChromeTheme>(
 		() => readStoredValue(STORAGE_KEYS.chromeTheme, "classic") as ChromeTheme,
 	);
+	const [colorTheme, setColorTheme] = useState<ColorTheme>(
+		() => readStoredValue(STORAGE_KEYS.colorTheme, "light") as ColorTheme,
+	);
 	const [hotTab, setHotTab] = useState(hotTabs[1]);
 	const [avatar, setAvatar] = useState<AvatarState>(() =>
 		readStoredJson(STORAGE_KEYS.avatar, { mode: "default" }),
@@ -459,6 +474,10 @@ export function App() {
 	}, [chromeTheme]);
 
 	useEffect(() => {
+		writeStoredValue(STORAGE_KEYS.colorTheme, colorTheme);
+	}, [colorTheme]);
+
+	useEffect(() => {
 		writeStoredJson(STORAGE_KEYS.wallpaper, wallpaper);
 	}, [wallpaper]);
 
@@ -494,8 +513,8 @@ export function App() {
 
 	return (
 		<div
-			className={`app-shell chrome-${chromeTheme}`}
-			style={getWallpaperStyle(wallpaper)}
+			className={`app-shell chrome-${chromeTheme} theme-${colorTheme}`}
+			style={getWallpaperStyle(wallpaper, colorTheme)}
 		>
 			<Header
 				city={city}
@@ -504,6 +523,8 @@ export function App() {
 				setActivePage={setActivePage}
 				avatar={avatar}
 				setAvatar={setAvatar}
+				colorTheme={colorTheme}
+				setColorTheme={setColorTheme}
 			/>
 
 			<main>
@@ -651,6 +672,8 @@ export function App() {
 							setWallpaper={setWallpaper}
 							chromeTheme={chromeTheme}
 							setChromeTheme={setChromeTheme}
+							colorTheme={colorTheme}
+							setColorTheme={setColorTheme}
 						/>
 					</section>
 				)}
@@ -762,6 +785,8 @@ function Header({
 	setActivePage,
 	avatar,
 	setAvatar,
+	colorTheme,
+	setColorTheme,
 }: {
 	city: string;
 	setCity: (city: string) => void;
@@ -769,6 +794,8 @@ function Header({
 	setActivePage: (page: PageId) => void;
 	avatar: AvatarState;
 	setAvatar: (avatar: AvatarState) => void;
+	colorTheme: ColorTheme;
+	setColorTheme: (theme: ColorTheme) => void;
 }) {
 	const [avatarOpen, setAvatarOpen] = useState(false);
 	const [qqInput, setQqInput] = useState(avatar.qq || "");
@@ -878,7 +905,18 @@ function Header({
 						aria-label="默认城市"
 					/>
 				</label>
-				<Sun className="theme-icon" size={20} />
+				<button
+					className="theme-toggle"
+					type="button"
+					aria-label={
+						colorTheme === "dark" ? "切换到浅色主题" : "切换到暗色主题"
+					}
+					onClick={() =>
+						setColorTheme(colorTheme === "dark" ? "light" : "dark")
+					}
+				>
+					{colorTheme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
+				</button>
 				<div className="avatar-wrap" ref={avatarWrapRef}>
 					<button
 						className="avatar"
@@ -1059,6 +1097,8 @@ function HotMiniBoard({
 }) {
 	const state = useApi<unknown>(apiBase, path, params || {}, true);
 	const items = toItems(state.data).slice(0, 8);
+	const displayItems = state.loading ? skeletonItems(8) : items;
+	const isEmpty = !state.loading && !state.error && items.length === 0;
 	return (
 		<article className="card mini-hot-card">
 			<CardTitle
@@ -1066,25 +1106,29 @@ function HotMiniBoard({
 				title={title}
 				right={<Status state={state} />}
 			/>
-			<ol className="rank-list compact-rank">
-				{(items.length ? items : skeletonItems(8)).map((item, index) => (
-					<li key={`${item.title || item.name || item.movie_name}-${index}`}>
-						<b>{index + 1}</b>
-						<a
-							href={item.link || item.url || "#"}
-							target="_blank"
-							rel="noreferrer"
-						>
-							{item.title || item.name || item.movie_name || "正在读取..."}
-						</a>
-						<span>
-							{formatHotValue(
-								item.hot_value ?? item.hot ?? item.heat ?? item.score,
-							)}
-						</span>
-					</li>
-				))}
-			</ol>
+			{isEmpty ? (
+				<EmptyState title="暂无热榜数据" desc="上游返回了空列表，稍后刷新即可。" />
+			) : (
+				<ol className="rank-list compact-rank">
+					{displayItems.map((item, index) => (
+						<li key={`${item.title || item.name || item.movie_name}-${index}`}>
+							<b>{index + 1}</b>
+							<a
+								href={item.link || item.url || "#"}
+								target="_blank"
+								rel="noreferrer"
+							>
+								{item.title || item.name || item.movie_name || "正在读取..."}
+							</a>
+							<span>
+								{formatHotValue(
+									item.hot_value ?? item.hot ?? item.heat ?? item.score,
+								)}
+							</span>
+						</li>
+					))}
+				</ol>
+			)}
 		</article>
 	);
 }
@@ -1142,6 +1186,8 @@ function NewsFeedCard({
 }) {
 	const state = useApi<unknown>(apiBase, path, params || {}, true);
 	const items = toItems(state.data).slice(0, 8);
+	const displayItems = state.loading ? skeletonItems(8) : items;
+	const isEmpty = !state.loading && !state.error && items.length === 0;
 	return (
 		<article className="card feed-card">
 			<CardTitle
@@ -1149,20 +1195,24 @@ function NewsFeedCard({
 				title={title}
 				right={<Status state={state} />}
 			/>
-			<ol className="news-list">
-				{(items.length ? items : skeletonItems(8)).map((item, index) => (
-					<li key={`${item.title || item.name || item.movie_name}-${index}`}>
-						<span>
-							{item.title ||
-								item.name ||
-								item.movie_name ||
-								item.desc ||
-								"正在读取资讯..."}
-						</span>
-						<time>{String(index + 1).padStart(2, "0")}</time>
-					</li>
-				))}
-			</ol>
+			{isEmpty ? (
+				<EmptyState title="暂无资讯" desc="接口返回为空，稍后会随缓存自动刷新。" />
+			) : (
+				<ol className="news-list">
+					{displayItems.map((item, index) => (
+						<li key={`${item.title || item.name || item.movie_name}-${index}`}>
+							<span>
+								{item.title ||
+									item.name ||
+									item.movie_name ||
+									item.desc ||
+									"正在读取资讯..."}
+							</span>
+							<time>{String(index + 1).padStart(2, "0")}</time>
+						</li>
+					))}
+				</ol>
+			)}
 		</article>
 	);
 }
@@ -1303,6 +1353,8 @@ function DailyCard({
 	state: ApiState<DailyNews> & { reload: () => void };
 }) {
 	const news = state.data?.news ?? [];
+	const displayNews = state.loading ? skeletonLines(8) : news;
+	const isEmpty = !state.loading && !state.error && news.length === 0;
 	return (
 		<article id="news" className="card daily-card span-6">
 			<CardTitle
@@ -1315,10 +1367,11 @@ function DailyCard({
 				<span>{state.data?.day_of_week}</span>
 				<span>{state.data?.lunar_date}</span>
 			</div>
-			<ol className="news-list">
-				{(news.length ? news : skeletonLines(8))
-					.slice(0, 8)
-					.map((item, index) => (
+			{isEmpty ? (
+				<EmptyState title="今日简报暂时为空" desc="上游接口已响应，但没有返回新闻条目。" />
+			) : (
+				<ol className="news-list">
+					{displayNews.slice(0, 8).map((item, index) => (
 						<li key={`${item}-${index}`}>
 							<span>
 								{typeof item === "string" ? item : "正在读取今日简报..."}
@@ -1326,7 +1379,8 @@ function DailyCard({
 							<time>{String(index + 1).padStart(2, "0")}</time>
 						</li>
 					))}
-			</ol>
+				</ol>
+			)}
 			<div className="button-row">
 				<a
 					className="outline-button"
@@ -1512,6 +1566,9 @@ function HotBoard({
 	items: HotItem[];
 	wide?: boolean;
 }) {
+	const displayItems = state.loading ? skeletonItems(10) : items;
+	const isEmpty = !state.loading && !state.error && items.length === 0;
+
 	return (
 		<article className={`card hot-board ${wide ? "wide" : ""}`}>
 			<CardTitle
@@ -1534,25 +1591,32 @@ function HotBoard({
 					</button>
 				))}
 			</div>
-			<ol className="rank-list">
-				{(items.length ? items : skeletonItems(10)).map((item, index) => (
-					<li key={`${item.title || item.name || item.movie_name}-${index}`}>
-						<b>{index + 1}</b>
-						<a
-							href={item.link || item.url || "#"}
-							target="_blank"
-							rel="noreferrer"
-						>
-							{item.title || item.name || item.movie_name || "正在读取热榜..."}
-						</a>
-						<span>
-							{formatHotValue(
-								item.hot_value ?? item.hot ?? item.heat ?? item.score,
-							)}
-						</span>
-					</li>
-				))}
-			</ol>
+			{isEmpty ? (
+				<EmptyState
+					title="暂无热榜数据"
+					desc="接口返回了空列表，不再假装加载中。可以手动刷新或切换榜单。"
+				/>
+			) : (
+				<ol className="rank-list">
+					{displayItems.map((item, index) => (
+						<li key={`${item.title || item.name || item.movie_name}-${index}`}>
+							<b>{index + 1}</b>
+							<a
+								href={item.link || item.url || "#"}
+								target="_blank"
+								rel="noreferrer"
+							>
+								{item.title || item.name || item.movie_name || "正在读取热榜..."}
+							</a>
+							<span>
+								{formatHotValue(
+									item.hot_value ?? item.hot ?? item.heat ?? item.score,
+								)}
+							</span>
+						</li>
+					))}
+				</ol>
+			)}
 		</article>
 	);
 }
@@ -1737,6 +1801,8 @@ function SettingsPanel({
 	setWallpaper,
 	chromeTheme,
 	setChromeTheme,
+	colorTheme,
+	setColorTheme,
 	compact = false,
 }: {
 	apiBase: string;
@@ -1748,6 +1814,8 @@ function SettingsPanel({
 	setWallpaper?: (value: WallpaperState) => void;
 	chromeTheme?: ChromeTheme;
 	setChromeTheme?: (value: ChromeTheme) => void;
+	colorTheme?: ColorTheme;
+	setColorTheme?: (value: ColorTheme) => void;
 	compact?: boolean;
 }) {
 	const wallpaperInputRef = useRef<HTMLInputElement | null>(null);
@@ -1802,6 +1870,40 @@ function SettingsPanel({
 			</div>
 			{!compact && wallpaper && setWallpaper && (
 				<div className="appearance-settings">
+					{colorTheme && setColorTheme && (
+						<>
+							<div className="settings-subtitle">
+								<span>
+									{colorTheme === "dark" ? (
+										<Moon size={18} />
+									) : (
+										<Sun size={18} />
+									)}
+									明暗主题
+								</span>
+								<small>选择更适合当前环境的显示亮度</small>
+							</div>
+							<div className="color-theme-grid">
+								{colorThemes.map((theme) => (
+									<button
+										type="button"
+										key={theme.id}
+										className={colorTheme === theme.id ? "active" : ""}
+										onClick={() => setColorTheme(theme.id)}
+									>
+										<i className={`color-preview color-preview-${theme.id}`}>
+											<span />
+											<b />
+										</i>
+										<span>
+											<b>{theme.label}</b>
+											<small>{theme.sub}</small>
+										</span>
+									</button>
+								))}
+							</div>
+						</>
+					)}
 					{chromeTheme && setChromeTheme && (
 						<>
 							<div className="settings-subtitle">
@@ -2069,6 +2171,16 @@ function CardTitle({
 	);
 }
 
+function EmptyState({ title, desc }: { title: string; desc: string }) {
+	return (
+		<div className="empty-state" role="status">
+			<Sparkles size={20} />
+			<b>{title}</b>
+			<small>{desc}</small>
+		</div>
+	);
+}
+
 function Status({ state }: { state: ApiState<unknown> }) {
 	if (state.loading)
 		return (
@@ -2298,10 +2410,16 @@ function buildSearchTarget(provider: SearchProviderId, keyword: string) {
 	return "#";
 }
 
-function getWallpaperStyle(wallpaper: WallpaperState): CSSProperties {
+function getWallpaperStyle(
+	wallpaper: WallpaperState,
+	colorTheme: ColorTheme,
+): CSSProperties {
+	const dark = colorTheme === "dark";
 	if (wallpaper.mode === "custom" && wallpaper.src) {
 		return {
-			backgroundImage: `linear-gradient(180deg, rgba(246, 248, 248, 0.84), rgba(246, 248, 248, 0.9)), url("${wallpaper.src}")`,
+			backgroundImage: dark
+				? `linear-gradient(180deg, rgba(7, 16, 15, 0.78), rgba(7, 16, 15, 0.9)), url("${wallpaper.src}")`
+				: `linear-gradient(180deg, rgba(246, 248, 248, 0.84), rgba(246, 248, 248, 0.9)), url("${wallpaper.src}")`,
 			backgroundSize: "cover",
 			backgroundPosition: "center",
 			backgroundAttachment: "fixed",
@@ -2310,19 +2428,25 @@ function getWallpaperStyle(wallpaper: WallpaperState): CSSProperties {
 	if (wallpaper.mode === "mint") {
 		return {
 			background:
-				"linear-gradient(135deg, rgba(15,155,142,0.16), rgba(37,99,235,0.08) 45%, rgba(246,248,248,1) 100%)",
+				dark
+					? "linear-gradient(135deg, rgba(55,216,197,0.16), rgba(37,99,235,0.1) 45%, rgba(7,16,15,1) 100%)"
+					: "linear-gradient(135deg, rgba(15,155,142,0.16), rgba(37,99,235,0.08) 45%, rgba(246,248,248,1) 100%)",
 		};
 	}
 	if (wallpaper.mode === "paper") {
 		return {
 			background:
-				"linear-gradient(180deg, rgba(255,255,255,0.96), rgba(246,248,248,1)), radial-gradient(circle at 20% 18%, rgba(15,155,142,0.06), transparent 28rem)",
+				dark
+					? "linear-gradient(180deg, rgba(12,25,23,0.96), rgba(7,16,15,1)), radial-gradient(circle at 20% 18%, rgba(55,216,197,0.12), transparent 28rem)"
+					: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(246,248,248,1)), radial-gradient(circle at 20% 18%, rgba(15,155,142,0.06), transparent 28rem)",
 		};
 	}
 	if (wallpaper.mode === "dawn") {
 		return {
 			background:
-				"linear-gradient(135deg, rgba(255,244,229,0.95), rgba(239,247,245,1) 52%, rgba(246,248,248,1))",
+				dark
+					? "linear-gradient(135deg, rgba(76,43,23,0.55), rgba(13,28,25,1) 52%, rgba(7,16,15,1))"
+					: "linear-gradient(135deg, rgba(255,244,229,0.95), rgba(239,247,245,1) 52%, rgba(246,248,248,1))",
 		};
 	}
 	return {};
