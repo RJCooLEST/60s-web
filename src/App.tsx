@@ -2286,7 +2286,7 @@ function getAvatarSrc(avatar: AvatarState) {
 	if (avatar.mode === "upload" && avatar.src) return avatar.src;
 	if (avatar.mode === "qq" && avatar.qq)
 		return avatar.src || getQqAvatarUrl(avatar.qq);
-	return "/favicon.png";
+	return "/avatar.jpg";
 }
 
 function buildSearchTarget(provider: SearchProviderId, keyword: string) {
