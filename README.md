@@ -17,6 +17,16 @@
 </p>
 
 <p align="center">
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdogxii%2F60s-web&project-name=60s-web&repository-name=60s-web">
+    <img src="https://vercel.com/button" alt="Deploy with Vercel" />
+  </a>
+  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/dogxii/60s-web">
+    <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="#一键部署">一键部署</a> ·
   <a href="#功能特性">功能特性</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="#配置说明">配置说明</a> ·
@@ -34,6 +44,23 @@
 
 部署案例：https://60s.dogxi.me/
 
+## 一键部署
+
+你可以直接通过下方入口快速创建自己的部署：
+
+- **Vercel**：点击 README 顶部 `Deploy with Vercel` 按钮，导入仓库后即可完成部署。
+- **Cloudflare**：点击 README 顶部 `Deploy to Cloudflare` 按钮，可将项目作为 Cloudflare Workers 静态资源应用快速部署。
+- **Docker**：Docker 没有统一的官方“一键部署按钮”，但仓库已提供 `Dockerfile`，可以通过下方命令快速启动。
+
+Docker 极速启动：
+
+```bash
+docker build -t 60s-web .
+docker run -d --name 60s-web -p 8080:80 60s-web
+```
+
+如果你希望面向更多自部署用户，推荐优先使用顶部的 `Vercel` / `Cloudflare` 按钮，再在文档中保留 `Docker` 的快速启动说明。
+
 ## 功能特性
 
 - **信息聚合**：今日 60 秒、历史信息、IT 资讯、AI 资讯等内容入口。
@@ -45,19 +72,19 @@
 - **导航搜索**：支持站内接口检索，并可跳转 Bing、Google、ChatGPT、豆包等搜索入口。
 - **个性化设置**：支持默认城市、API 地址、模块开关、头像、壁纸、导航与 Footer 样式。
 - **缓存刷新**：默认 10 分钟缓存，并自动刷新常用数据，减少重复请求。
-- **部署友好**：支持 Vercel、Cloudflare Pages、Docker、Nginx 静态部署。
+- **部署友好**：支持 Vercel、Cloudflare Workers、Cloudflare Pages、Docker、Nginx 静态部署。
 
 ## 技术栈
 
-| 类别             | 技术                                       |
-| ---------------- | ------------------------------------------ |
-| Runtime / 包管理 | Bun                                        |
-| 构建工具         | Vite                                       |
-| 前端框架         | React 19                                   |
-| 开发语言         | TypeScript                                 |
-| 图标体系         | lucide-react                               |
-| 数据来源         | vikiboss/60s API                           |
-| 部署方式         | Vercel / Cloudflare Pages / Docker / Nginx |
+| 类别             | 技术                                                            |
+| ---------------- | --------------------------------------------------------------- |
+| Runtime / 包管理 | Bun                                                             |
+| 构建工具         | Vite                                                            |
+| 前端框架         | React 19                                                        |
+| 开发语言         | TypeScript                                                      |
+| 图标体系         | lucide-react                                                    |
+| 数据来源         | vikiboss/60s API                                                |
+| 部署方式         | Vercel / Cloudflare Workers / Cloudflare Pages / Docker / Nginx |
 
 ## 快速开始
 
@@ -154,6 +181,14 @@ bunx vercel
 bunx vercel --prod
 ```
 
+### Cloudflare Workers（一键部署）
+
+仓库顶部已提供官方 `Deploy to Cloudflare` 按钮。
+
+该按钮适合希望**直接复制仓库并快速上线**的用户，部署目标为 **Cloudflare Workers 静态资源应用**。对于 React / Vite 这类 SPA，这种方式也可以很好地承载静态前端页面。
+
+如果你希望继续使用传统的 Git 导入方式，也可以选择下方的 `Cloudflare Pages` 方案。
+
 ### Cloudflare Pages
 
 在 Cloudflare Dashboard 中进入 `Workers & Pages -> Create application -> Pages`，连接 GitHub 仓库 `dogxii/60s-web` 后使用以下配置：
@@ -180,6 +215,12 @@ Build output directory: dist
 
 ### Docker
 
+Docker 方案适合：
+
+- 本地快速运行
+- 服务器自托管
+- 配合 Portainer / 1Panel / Dokploy / CasaOS 等面板部署
+
 构建镜像：
 
 ```bash
@@ -197,6 +238,8 @@ docker run -d --name 60s-web -p 8080:80 60s-web
 ```text
 http://localhost:8080
 ```
+
+> 说明：Docker 本身没有像 Vercel / Cloudflare 那样统一、通用的官方“一键部署按钮”，因此这里保留为最快可复制执行的启动方式。
 
 ### Docker Compose
 
@@ -261,6 +304,7 @@ server {
 ├── Dockerfile            # Docker 镜像构建
 ├── nginx.conf            # 容器内 Nginx 配置
 ├── vercel.json           # Vercel 部署配置
+├── wrangler.jsonc        # Cloudflare Workers 部署配置
 └── vite.config.ts        # Vite 配置
 ```
 
