@@ -15,6 +15,7 @@ import {
 	Flame,
 	Fuel,
 	Gauge,
+	Github,
 	Globe2,
 	Home,
 	KeyRound,
@@ -157,6 +158,8 @@ const toolDefinitions: ToolDefinition[] = [
 
 const EPIC_COVER_PLACEHOLDER =
 	"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='172' height='116' viewBox='0 0 172 116'><rect width='172' height='116' rx='12' fill='%23f3f6f8'/><rect x='16' y='16' width='140' height='84' rx='10' fill='%23e7eef3'/><path d='M36 82l24-26 18 18 26-30 32 38H36z' fill='%23c9d6df'/><circle cx='58' cy='44' r='9' fill='%23d7e3ea'/><text x='86' y='104' text-anchor='middle' font-size='12' fill='%23667885' font-family='Arial, sans-serif'>Epic Cover</text></svg>";
+const API_REPO_URL = "https://github.com/vikiboss/60s";
+const WEB_REPO_URL = "https://github.com/dog234/60s-web";
 
 const categoryLabels: Record<EndpointDefinition["category"], string> = {
 	periodic: "周期资讯",
@@ -181,6 +184,7 @@ function useApi<T>(
 	path: string,
 	params: Record<string, string | undefined>,
 	enabled = true,
+	autoRefresh = true,
 ) {
 	const paramsKey = JSON.stringify(params);
 	const stableParams = useMemo(
@@ -245,6 +249,12 @@ function useApi<T>(
 		void load(false);
 	}, [enabled, load]);
 
+	useEffect(() => {
+		if (!enabled || !autoRefresh) return;
+		const timer = window.setInterval(() => void load(true), CACHE_TTL);
+		return () => window.clearInterval(timer);
+	}, [autoRefresh, enabled, load]);
+
 	const reload = useCallback(() => load(true), [load]);
 
 	return { ...state, reload };
@@ -273,62 +283,76 @@ export function App() {
 		}),
 	);
 
-	const daily = useApi<DailyNews>(apiBase, "/60s", {}, settings.showNews);
+	const daily = useApi<DailyNews>(
+		apiBase,
+		"/60s",
+		{},
+		settings.showNews,
+		settings.autoRefresh,
+	);
 	const weather = useApi<WeatherRealtime>(
 		apiBase,
 		"/weather/realtime",
 		{ query: city },
 		settings.showWeather,
+		settings.autoRefresh,
 	);
 	const forecast = useApi<WeatherForecast>(
 		apiBase,
 		"/weather/forecast",
 		{ query: city, days: "7" },
 		settings.showWeather,
+		settings.autoRefresh,
 	);
-	const hot = useApi<unknown>(apiBase, hotTab.path, {}, settings.showHot);
-	const gold = useApi<GoldPrice>(apiBase, "/gold-price", {}, true);
+	const hot = useApi<unknown>(
+		apiBase,
+		hotTab.path,
+		{},
+		settings.showHot,
+		settings.autoRefresh,
+	);
+	const gold = useApi<GoldPrice>(
+		apiBase,
+		"/gold-price",
+		{},
+		true,
+		settings.autoRefresh,
+	);
 	const fuel = useApi<FuelPrice>(
 		apiBase,
 		"/fuel-price",
 		{ region: city },
 		true,
+		settings.autoRefresh,
 	);
 	const exchange = useApi<ExchangeRate>(
 		apiBase,
 		"/exchange-rate",
 		{ currency: "CNY" },
 		true,
-	);
-	const epic = useApi<EpicGame[]>(apiBase, "/epic", {}, true);
-	const maoyan = useApi<unknown>(apiBase, "/maoyan/realtime/movie", {}, true);
-	const hitokoto = useApi<unknown>(apiBase, "/hitokoto", {}, true);
-
-	useEffect(() => {
-		if (!settings.autoRefresh) return;
-		const timer = window.setInterval(
-			() => {
-				daily.reload();
-				weather.reload();
-				forecast.reload();
-				hot.reload();
-				gold.reload();
-				fuel.reload();
-				epic.reload();
-			},
-			10 * 60 * 1000,
-		);
-		return () => window.clearInterval(timer);
-	}, [
 		settings.autoRefresh,
-		daily.reload,
-		weather.reload,
-		forecast.reload,
-		hot.reload,
-		gold.reload,
-		fuel.reload,
-		epic.reload,
-	]);
+	);
+	const epic = useApi<EpicGame[]>(
+		apiBase,
+		"/epic",
+		{},
+		true,
+		settings.autoRefresh,
+	);
+	const maoyan = useApi<unknown>(
+		apiBase,
+		"/maoyan/realtime/movie",
+		{},
+		true,
+		settings.autoRefresh,
+	);
+	const hitokoto = useApi<unknown>(
+		apiBase,
+		"/hitokoto",
+		{},
+		true,
+		settings.autoRefresh,
+	);
 
 	const hotItems = useMemo(() => toItems(hot.data).slice(0, 10), [hot.data]);
 	const movieItems = useMemo(
@@ -1152,14 +1176,14 @@ function ToolsPage({
 					<CardTitle
 						icon={<Search size={18} />}
 						title="搜索提示"
-						right={<span className="status">到设置页看接口实验室</span>}
+						right={<span className="status">已筛选接口实验室</span>}
 					/>
 					<p>
-						你当前搜索的是接口或功能关键词，接口实验室已经移动到
-						<span>“设置”</span>页，便捷工具保留在当前页。
+						你当前搜索的是接口或功能关键词，下方接口实验室会同步筛选匹配项。
 					</p>
 				</div>
 			)}
+			<EndpointLab apiBase={apiBase} query={query} />
 		</section>
 	);
 }
@@ -1386,7 +1410,7 @@ function HotBoard({
 				title="全网热榜"
 				right={
 					<button className="ghost-button" onClick={state.reload}>
-						<RefreshCw size={16} /> 实时更新
+						<RefreshCw size={16} /> 刷新缓存
 					</button>
 				}
 			/>
@@ -1512,7 +1536,7 @@ function ToolShortcuts({
 							to: "en",
 						}),
 						qrcode: buildUrl(apiBase, "/qrcode", {
-							text: "https://github.com/vikiboss/60s",
+							text: API_REPO_URL,
 							encoding: "json",
 						}),
 						password: buildUrl(apiBase, "/password", {
@@ -1553,6 +1577,21 @@ function ToolShortcuts({
 						</a>
 					);
 				})}
+			</div>
+			<div className="tool-card-extra">
+				<div>
+					<b>接口实验室</b>
+					<small>按关键词筛选并直接运行 60s API</small>
+				</div>
+				{setActivePage ? (
+					<button type="button" onClick={() => setActivePage("tools")}>
+						<Code2 size={16} /> 打开
+					</button>
+				) : (
+					<a href={WEB_REPO_URL} target="_blank" rel="noreferrer">
+						<Github size={16} /> GitHub
+					</a>
+				)}
 			</div>
 		</article>
 	);
@@ -1887,53 +1926,62 @@ function WeatherIcon({
 }
 
 function Footer({ apiBase, updatedAt }: { apiBase: string; updatedAt?: Date }) {
-	const currentSite =
-		typeof window === "undefined" ? "60s-web" : window.location.origin;
 	return (
 		<footer>
-			<div className="footer-left">
-				<a
-					className="footer-link"
-					href="https://github.com/vikiboss/60s"
-					target="_blank"
-					rel="noreferrer"
-				>
-					<img src="/favicon.png" alt="60s logo" width={16} height={16} />
-					60s
-				</a>
-				<a
-					className="footer-link"
-					href={currentSite}
-					target="_blank"
-					rel="noreferrer"
-				>
-					60s-web
-				</a>
-				<span className="footer-link">
-					{apiBase.replace(/^https?:\/\//, "")}
-				</span>
-			</div>
-			<div className="footer-right">
-				<span className="footer-badge ok">
-					<strong>状态</strong>
-					正常
-				</span>
-				<span className="footer-badge version">
-					<strong>版本</strong>v{packageInfo.version}
-				</span>
-				<span className="footer-badge runtime">
-					<strong>缓存</strong>
-					10 分钟
-				</span>
-				<span className="footer-badge">
-					<strong>最近同步</strong>
-					{updatedAt
-						? updatedAt.toLocaleTimeString("zh-CN", {
-								hour: "2-digit",
-								minute: "2-digit",
-							})
-						: "--:--"}
-				</span>
+			<div className="footer-inner">
+				<div className="footer-left">
+					<a
+						className="footer-link brand-link"
+						href={API_REPO_URL}
+						target="_blank"
+						rel="noreferrer"
+					>
+						<img src="/favicon.png" alt="60s logo" width={18} height={18} />
+						<span>
+							<strong>60s</strong>
+							<small>API 项目</small>
+						</span>
+						<Github size={15} />
+					</a>
+					<a
+						className="footer-link brand-link"
+						href={WEB_REPO_URL}
+						target="_blank"
+						rel="noreferrer"
+					>
+						<Github size={18} />
+						<span>
+							<strong>60s-web</strong>
+							<small>网页项目</small>
+						</span>
+					</a>
+					<span className="footer-link api-link">
+						<Globe2 size={16} />
+						{apiBase.replace(/^https?:\/\//, "")}
+					</span>
+				</div>
+				<div className="footer-right">
+					<span className="footer-badge ok">
+						<strong>状态</strong>
+						正常
+					</span>
+					<span className="footer-badge version">
+						<strong>版本</strong>v{packageInfo.version}
+					</span>
+					<span className="footer-badge runtime">
+						<strong>缓存</strong>
+						10 分钟
+					</span>
+					<span className="footer-badge">
+						<strong>最近同步</strong>
+						{updatedAt
+							? updatedAt.toLocaleTimeString("zh-CN", {
+									hour: "2-digit",
+									minute: "2-digit",
+								})
+							: "--:--"}
+					</span>
+				</div>
 			</div>
 		</footer>
 	);
@@ -2236,7 +2284,7 @@ function TranslateTool({ apiBase }: { apiBase: string }) {
 }
 
 function QrcodeTool({ apiBase }: { apiBase: string }) {
-	const [text, setText] = useState("https://github.com/vikiboss/60s");
+	const [text, setText] = useState(API_REPO_URL);
 	const [result, setResult] = useState<ApiState<QrCodeResult>>({
 		loading: false,
 	});
