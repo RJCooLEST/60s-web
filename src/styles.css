@@ -2470,9 +2470,51 @@ footer strong {
 	color: var(--accent-dark);
 }
 
+.theme-dark .ghost-button {
+	border: 1px solid var(--line);
+	background: var(--surface-soft);
+	color: var(--heading);
+}
+
+.theme-dark .tool-card-extra {
+	border-color: var(--line);
+	background:
+		linear-gradient(180deg, rgba(20, 36, 33, 0.96), rgba(13, 27, 25, 0.96)),
+		var(--surface-soft);
+	color: var(--text);
+}
+
+.theme-dark .tool-card-extra button,
+.theme-dark .tool-card-extra a {
+	border: 1px solid rgba(55, 216, 197, 0.2);
+	background: var(--surface-strong);
+	color: var(--heading);
+	box-shadow: none;
+}
+
 .theme-dark .topbar nav button {
 	background: var(--surface-soft);
 	color: var(--heading);
+}
+
+.theme-dark.chrome-minimal .topbar {
+	background: rgba(7, 16, 15, 0.72);
+	border-bottom-color: rgba(55, 216, 197, 0.16);
+}
+
+.theme-dark.chrome-minimal .topbar nav button {
+	background: transparent;
+	color: var(--text);
+}
+
+.theme-dark.chrome-minimal .topbar nav button.active {
+	background: transparent;
+	color: var(--accent-dark);
+}
+
+.theme-dark.chrome-minimal .topbar nav button.active::after {
+	background: linear-gradient(90deg, transparent, var(--accent), transparent);
+	box-shadow: 0 0 14px rgba(55, 216, 197, 0.42);
 }
 
 .theme-dark .quote-card {
@@ -2860,9 +2902,65 @@ footer strong {
 	}
 
 	.chrome-floating .topbar {
-		width: min(100% - 24px, 1536px);
-		margin-top: 10px;
-		padding: 10px 12px 8px;
+		width: min(100% - 20px, 1536px);
+		margin-top: 8px;
+		padding: 10px;
+		border-radius: 18px;
+	}
+
+	.chrome-floating .topbar nav {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 8px;
+		margin: 6px 0 0;
+		padding: 8px 0 0;
+		border-top: 1px solid rgba(15, 155, 142, 0.1);
+		overflow: visible;
+	}
+
+	.chrome-floating .topbar nav button {
+		min-width: 0;
+		width: 100%;
+		padding: 0 8px;
+	}
+
+	.chrome-floating .brand strong {
+		max-width: 126px;
+	}
+
+	.chrome-floating .header-actions {
+		gap: 6px;
+	}
+
+	.theme-dark .topbar nav button,
+	.theme-dark.chrome-floating .topbar nav button {
+		background: var(--surface-soft);
+		color: var(--heading);
+	}
+
+	.theme-dark .topbar nav button.active,
+	.theme-dark.chrome-floating .topbar nav button.active {
+		background: rgba(55, 216, 197, 0.14);
+		color: var(--accent-dark);
+	}
+
+	.theme-dark.chrome-minimal .topbar {
+		background: rgba(7, 16, 15, 0.78);
+	}
+
+	.theme-dark.chrome-minimal .topbar nav button {
+		background: rgba(20, 36, 33, 0.72);
+		color: var(--heading);
+	}
+
+	.theme-dark.chrome-minimal .topbar nav button.active {
+		background: rgba(55, 216, 197, 0.12);
+		color: var(--accent-dark);
+		box-shadow: inset 0 0 0 1px rgba(55, 216, 197, 0.24);
+	}
+
+	.theme-dark.chrome-minimal .topbar nav button.active::after {
+		display: none;
 	}
 
 	.footer-inner {

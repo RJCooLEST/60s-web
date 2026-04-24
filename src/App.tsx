@@ -333,7 +333,7 @@ export function App() {
 			readStoredValue(STORAGE_KEYS.searchProvider, "site") as SearchProviderId,
 	);
 	const [chromeTheme, setChromeTheme] = useState<ChromeTheme>(
-		() => readStoredValue(STORAGE_KEYS.chromeTheme, "classic") as ChromeTheme,
+		() => readStoredValue(STORAGE_KEYS.chromeTheme, "minimal") as ChromeTheme,
 	);
 	const [colorTheme, setColorTheme] = useState<ColorTheme>(
 		() => readStoredValue(STORAGE_KEYS.colorTheme, "light") as ColorTheme,
@@ -475,6 +475,19 @@ export function App() {
 
 	useEffect(() => {
 		writeStoredValue(STORAGE_KEYS.colorTheme, colorTheme);
+	}, [colorTheme]);
+
+	useEffect(() => {
+		const themeColor = colorTheme === "dark" ? "#07100f" : "#ffffff";
+		let meta = document.querySelector<HTMLMetaElement>(
+			'meta[name="theme-color"]',
+		);
+		if (!meta) {
+			meta = document.createElement("meta");
+			meta.name = "theme-color";
+			document.head.appendChild(meta);
+		}
+		meta.content = themeColor;
 	}, [colorTheme]);
 
 	useEffect(() => {
