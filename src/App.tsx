@@ -1,16 +1,11 @@
 import {
 	CalendarClock,
-	Cloud,
 	CloudSun,
 	Coins,
-	ExternalLink,
 	Flame,
-	Github,
 	LayoutGrid,
 	QrCode,
-	RefreshCw,
 	Search,
-	WalletCards,
 } from "lucide-react";
 import {
 	useEffect,
@@ -27,40 +22,28 @@ import {
 	endpoints,
 	type FuelPrice,
 	type GoldPrice,
-	type HotItem,
 	toItems,
 	type WeatherForecast,
 	type WeatherRealtime,
 } from "./api";
-import { getHomeCards, type HomeCardId } from "./cards";
 import { EndpointLab } from "./components/EndpointLab";
 import { Header } from "./components/Header";
-import { HotBoard, HotPage } from "./components/Hot";
-import {
-	EntertainmentCard,
-	MarketStrip,
-	QuoteCard,
-	ToolShortcuts,
-} from "./components/HomeCards";
-import { DailyCard, NewsPage } from "./components/News";
+import { HotPage } from "./components/Hot";
+import { MarketStrip } from "./components/HomeCards";
+import { HomePage } from "./components/HomePage";
+import { NewsPage } from "./components/News";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { ToolWorkspace } from "./components/ToolWorkspace";
-import { WeatherCard, WeatherPage } from "./components/Weather";
+import { WeatherPage } from "./components/Weather";
 import {
 	CardTitle,
-	EmptyState,
 	Footer,
-	Metric,
-	Status,
-	WeatherIcon,
 } from "./components/ui";
 import {
-	API_REPO_URL,
 	categoryLabels,
 	hotTabs,
 	searchProviders,
 	STORAGE_KEYS,
-	WEB_REPO_URL,
 } from "./config";
 import { useApi } from "./hooks/useApi";
 import {
@@ -84,8 +67,6 @@ import {
 	buildSearchTarget,
 	defaults,
 	getWallpaperStyle,
-	skeletonItems,
-	skeletonLines,
 } from "./utils";
 
 export function App() {
@@ -458,127 +439,6 @@ export function App() {
 
 			<Footer apiBase={apiBase} updatedAt={daily.updatedAt} />
 		</div>
-	);
-}
-
-function HomePage({
-	settings,
-	daily,
-	weather,
-	forecast,
-	city,
-	setCity,
-	gold,
-	fuel,
-	exchange,
-	hotTab,
-	setHotTab,
-	hot,
-	hotItems,
-	epic,
-	movieItems,
-	hitokoto,
-	apiBase,
-	setApiBase,
-	setActivePage,
-	setActiveTool,
-	setSettings,
-	reloadAll,
-}: {
-	settings: SettingsState;
-	daily: ApiState<DailyNews> & { reload: () => void };
-	weather: ApiState<WeatherRealtime> & { reload: () => void };
-	forecast: ApiState<WeatherForecast> & { reload: () => void };
-	city: string;
-	setCity: (city: string) => void;
-	gold: ApiState<GoldPrice> & { reload: () => void };
-	fuel: ApiState<FuelPrice> & { reload: () => void };
-	exchange: ApiState<ExchangeRate> & { reload: () => void };
-	hotTab: (typeof hotTabs)[number];
-	setHotTab: (tab: (typeof hotTabs)[number]) => void;
-	hot: ApiState<unknown> & { reload: () => void };
-	hotItems: HotItem[];
-	epic: ApiState<EpicGame[]>;
-	movieItems: HotItem[];
-	hitokoto?: unknown;
-	apiBase: string;
-	setApiBase: (value: string) => void;
-	setActivePage: (page: PageId) => void;
-	setActiveTool: (tool: ToolId) => void;
-	setSettings: (value: SettingsState) => void;
-	reloadAll: () => void;
-}) {
-	const renderHomeCard = (cardId: HomeCardId) => {
-		if (cardId === "daily") return <DailyCard state={daily} />;
-		if (cardId === "hot") {
-			return (
-				<HotBoard
-					tabs={hotTabs}
-					active={hotTab.id}
-					setActive={setHotTab}
-					state={hot}
-					items={hotItems}
-				/>
-			);
-		}
-		if (cardId === "settings") {
-			return (
-				<SettingsPanel
-					apiBase={apiBase}
-					setApiBase={setApiBase}
-					settings={settings}
-					setSettings={setSettings}
-					reloadAll={reloadAll}
-					compact
-				/>
-			);
-		}
-		if (cardId === "weather") {
-			return (
-				<WeatherCard
-					city={city}
-					setCity={setCity}
-					realtime={weather}
-					forecast={forecast}
-					compact
-				/>
-			);
-		}
-		if (cardId === "market") {
-			return <MarketStrip gold={gold} fuel={fuel} exchange={exchange} city={city} />;
-		}
-		if (cardId === "entertainmentTools") {
-			return (
-				<div className="home-right-split">
-					<EntertainmentCard epic={epic} movies={movieItems} />
-					<ToolShortcuts
-						apiBase={apiBase}
-						setActivePage={setActivePage}
-						setActiveTool={setActiveTool}
-					/>
-				</div>
-			);
-		}
-		return <QuoteCard data={hitokoto} />;
-	};
-
-	return (
-		<section className="home-layout">
-			<div className="home-left">
-				{getHomeCards("left", settings).map((card) => (
-					<div className="home-card-slot" key={card.id}>
-						{renderHomeCard(card.id)}
-					</div>
-				))}
-			</div>
-			<div className="home-right">
-				{getHomeCards("right", settings).map((card) => (
-					<div className="home-card-slot" key={card.id}>
-						{renderHomeCard(card.id)}
-					</div>
-				))}
-			</div>
-		</section>
 	);
 }
 
