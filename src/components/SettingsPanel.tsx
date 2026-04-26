@@ -7,6 +7,12 @@ import {
 	Sun,
 } from "lucide-react";
 import { useRef } from "react";
+import {
+	defaultHomeCardLayout,
+	getHomeCardDefinition,
+	isHomeCardVisible,
+	type HomeCardColumn,
+} from "../cards";
 import { chromeThemes, colorThemes, wallpaperOptions } from "../config";
 import type {
 	ChromeTheme,
@@ -53,6 +59,10 @@ export function SettingsPanel({
 		["showHot", "显示热榜"],
 		["showNews", "显示新闻"],
 		["autoRefresh", "自动刷新"],
+	];
+	const homeCardColumns: Array<[HomeCardColumn, string]> = [
+		["left", "主阅读栏"],
+		["right", "辅助信息栏"],
 	];
 	const handleWallpaperFile = (file?: File) => {
 		if (!file || !setWallpaper) return;
@@ -107,6 +117,42 @@ export function SettingsPanel({
 					<RefreshCw size={17} /> 刷新全部模块
 				</button>
 			</div>
+			{!compact && (
+				<div className="home-card-settings">
+					<div className="settings-subtitle">
+						<span>
+							<LayoutGrid size={18} /> 首页卡片
+						</span>
+						<small>为后续自定义排序和新增 API 卡片预留</small>
+					</div>
+					<div className="home-card-manager">
+						{homeCardColumns.map(([column, label]) => (
+							<div className="home-card-column" key={column}>
+								<b>{label}</b>
+								{defaultHomeCardLayout[column].map((cardId) => {
+									const card = getHomeCardDefinition(cardId);
+									const visible = isHomeCardVisible(card, settings);
+									return (
+										<div
+											className={`home-card-item ${visible ? "" : "is-hidden"}`}
+											key={card.id}
+										>
+											<span>
+												<b>{card.label}</b>
+												<small>{card.description}</small>
+											</span>
+											<em>{visible ? "显示中" : "已隐藏"}</em>
+										</div>
+									);
+								})}
+							</div>
+						))}
+					</div>
+					<p className="home-card-note">
+						当前仍沿用模块开关控制显示状态；下一阶段可以在这里接入排序、固定、隐藏和更多接口卡片。
+					</p>
+				</div>
+			)}
 			{!compact && wallpaper && setWallpaper && (
 				<div className="appearance-settings">
 					{colorTheme && setColorTheme && (

@@ -1557,6 +1557,10 @@ main {
 	align-self: end;
 }
 
+.home-card-settings {
+	border-top: 1px solid var(--line);
+}
+
 .settings-subtitle {
 	display: flex;
 	align-items: center;
@@ -1580,6 +1584,83 @@ main {
 
 .appearance-settings {
 	border-top: 1px solid var(--line);
+}
+
+.home-card-manager {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+	padding: 0 14px 12px;
+}
+
+.home-card-column {
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface-strong);
+}
+
+.home-card-column > b {
+	color: var(--heading);
+	font-size: 14px;
+}
+
+.home-card-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	background: #f7f9fb;
+}
+
+.home-card-item span,
+.home-card-item b,
+.home-card-item small {
+	display: block;
+	min-width: 0;
+}
+
+.home-card-item b {
+	color: var(--heading);
+	font-size: 14px;
+}
+
+.home-card-item small {
+	margin-top: 3px;
+	color: var(--muted);
+	line-height: 1.45;
+}
+
+.home-card-item em {
+	flex: 0 0 auto;
+	padding: 4px 8px;
+	border-radius: 999px;
+	background: rgba(15, 155, 142, 0.1);
+	color: #0f766e;
+	font-size: 12px;
+	font-style: normal;
+	font-weight: 800;
+}
+
+.home-card-item.is-hidden {
+	opacity: 0.62;
+}
+
+.home-card-item.is-hidden em {
+	background: rgba(100, 116, 139, 0.12);
+	color: var(--muted);
+}
+
+.home-card-note {
+	margin: 0;
+	padding: 0 14px 16px;
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.6;
 }
 
 .color-theme-grid,
@@ -2423,6 +2504,15 @@ footer strong {
 	color: var(--heading);
 }
 
+.theme-dark .home-card-item {
+	background: rgba(255, 255, 255, 0.055);
+}
+
+.theme-dark .home-card-item em {
+	background: rgba(89, 209, 194, 0.15);
+	color: #8ff2e6;
+}
+
 .theme-dark .brand,
 .theme-dark .card-title b,
 .theme-dark .compact-row b,
@@ -2828,6 +2918,7 @@ footer strong {
 	.tool-grid,
 	.settings-grid,
 	.compact-settings .settings-grid,
+	.home-card-manager,
 	.color-theme-grid,
 	.chrome-theme-grid,
 	.wallpaper-grid,
