@@ -37,6 +37,7 @@ export const STORAGE_KEYS = {
 	chromeTheme: "60s-web:chrome-theme",
 	colorTheme: "60s-web:color-theme",
 	homeCardLayout: "60s-web:home-card-layout",
+	endpointFavorites: "60s-web:endpoint-favorites",
 } as const;
 
 export const nav = [

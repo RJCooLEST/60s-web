@@ -3,6 +3,8 @@ import {
 	Copy,
 	ExternalLink,
 	Loader2,
+	Star,
+	StarOff,
 	TerminalSquare,
 } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
@@ -13,15 +15,19 @@ import {
 	tryBuildUrl,
 } from "../api";
 import { categoryIcons, categoryLabels } from "../config";
-import type { ApiState } from "../types";
+import type { ApiState, EndpointFavoriteId } from "../types";
 import { defaults } from "../utils";
 
 export function EndpointLab({
 	apiBase,
 	query,
+	favorites,
+	setFavorites,
 }: {
 	apiBase: string;
 	query: string;
+	favorites: EndpointFavoriteId[];
+	setFavorites: (favorites: EndpointFavoriteId[]) => void;
 }) {
 	const [category, setCategory] = useState<
 		EndpointDefinition["category"] | "all"
@@ -34,6 +40,14 @@ export function EndpointLab({
 	const activeUrl = useMemo(
 		() => tryBuildUrl(apiBase, active.path, params),
 		[active.path, apiBase, params],
+	);
+	const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
+	const favoriteEndpoints = useMemo(
+		() =>
+			favorites
+				.map((id) => endpoints.find((endpoint) => endpoint.id === id))
+				.filter((endpoint): endpoint is EndpointDefinition => Boolean(endpoint)),
+		[favorites],
 	);
 
 	const visible = useMemo(() => {
@@ -62,6 +76,14 @@ export function EndpointLab({
 		setResult({ loading: false });
 	};
 
+	const toggleFavorite = (endpoint: EndpointDefinition) => {
+		if (favoriteSet.has(endpoint.id)) {
+			setFavorites(favorites.filter((id) => id !== endpoint.id));
+			return;
+		}
+		setFavorites([...favorites, endpoint.id]);
+	};
+
 	const run = async (event?: FormEvent) => {
 		event?.preventDefault();
 		setResult({ loading: true });
@@ -77,7 +99,56 @@ export function EndpointLab({
 	};
 
 	return (
-		<div className="endpoint-lab">
+		<>
+			<section className="endpoint-favorites card">
+				<div className="card-title">
+					<span>
+						<Star size={20} />
+						<b>常用接口</b>
+					</span>
+					<small>{favoriteEndpoints.length} 个收藏</small>
+				</div>
+				{favoriteEndpoints.length > 0 ? (
+					<div className="favorite-grid">
+						{favoriteEndpoints.map((endpoint) => {
+							const Icon = categoryIcons[endpoint.category];
+							const href = tryBuildUrl(apiBase, endpoint.path, defaults(endpoint));
+							return (
+								<article className="favorite-card" key={endpoint.id}>
+									<button type="button" onClick={() => choose(endpoint)}>
+										<Icon size={19} />
+										<span>
+											<b>{endpoint.name}</b>
+											<small>{endpoint.path}</small>
+										</span>
+									</button>
+									<div className="favorite-card-actions">
+										{href ? (
+											<a href={href} target="_blank" rel="noreferrer">
+												打开 <ExternalLink size={14} />
+											</a>
+										) : (
+											<span>地址无效</span>
+										)}
+										<button
+											type="button"
+											aria-label={`取消收藏：${endpoint.name}`}
+											onClick={() => toggleFavorite(endpoint)}
+										>
+											<StarOff size={15} /> 取消
+										</button>
+									</div>
+								</article>
+							);
+						})}
+					</div>
+				) : (
+					<p className="favorite-empty">
+						点击接口旁的星标收藏常用 API，之后会显示在这里。
+					</p>
+				)}
+			</section>
+			<div className="endpoint-lab">
 			<div className="section-title">
 				<span>
 					<Code2 size={24} />
@@ -108,18 +179,34 @@ export function EndpointLab({
 				<div className="endpoint-list">
 					{visible.map((endpoint) => {
 						const Icon = categoryIcons[endpoint.category];
+						const isFavorite = favoriteSet.has(endpoint.id);
 						return (
-							<button
+							<div
 								key={endpoint.id}
-								className={active.id === endpoint.id ? "active" : ""}
-								onClick={() => choose(endpoint)}
+								className={`endpoint-list-item ${
+									active.id === endpoint.id ? "active" : ""
+								}`}
 							>
-								<Icon size={18} />
-								<span>
-									<b>{endpoint.name}</b>
-									<small>{endpoint.path}</small>
-								</span>
-							</button>
+								<button
+									type="button"
+									className="endpoint-choice"
+									onClick={() => choose(endpoint)}
+								>
+									<Icon size={18} />
+									<span>
+										<b>{endpoint.name}</b>
+										<small>{endpoint.path}</small>
+									</span>
+								</button>
+								<button
+									type="button"
+									className={`favorite-toggle ${isFavorite ? "active" : ""}`}
+									aria-label={`${isFavorite ? "取消收藏" : "收藏"}：${endpoint.name}`}
+									onClick={() => toggleFavorite(endpoint)}
+								>
+									<Star size={16} />
+								</button>
+							</div>
 						);
 					})}
 				</div>
@@ -129,13 +216,28 @@ export function EndpointLab({
 							<b>{active.name}</b>
 							<small>{active.description}</small>
 						</div>
-						{activeUrl ? (
-							<a href={activeUrl} target="_blank" rel="noreferrer">
-								打开 <ExternalLink size={15} />
-							</a>
-						) : (
-							<span className="disabled-link">地址无效</span>
-						)}
+						<div className="runner-head-actions">
+							<button
+								type="button"
+								className={`favorite-toggle ${
+									favoriteSet.has(active.id) ? "active" : ""
+								}`}
+								aria-label={`${
+									favoriteSet.has(active.id) ? "取消收藏" : "收藏"
+								}：${active.name}`}
+								onClick={() => toggleFavorite(active)}
+							>
+								<Star size={16} />
+								{favoriteSet.has(active.id) ? "已收藏" : "收藏"}
+							</button>
+							{activeUrl ? (
+								<a href={activeUrl} target="_blank" rel="noreferrer">
+									打开 <ExternalLink size={15} />
+								</a>
+							) : (
+								<span className="disabled-link">地址无效</span>
+							)}
+						</div>
 					</div>
 					<form onSubmit={run} className="param-form">
 						{(active.params?.length
@@ -194,6 +296,7 @@ export function EndpointLab({
 					</pre>
 				</div>
 			</div>
-		</div>
+			</div>
+		</>
 	);
 }

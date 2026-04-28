@@ -67,6 +67,7 @@ import type {
 	AvatarState,
 	ChromeTheme,
 	ColorTheme,
+	EndpointFavoriteId,
 	PageId,
 	SearchProviderId,
 	SettingsState,
@@ -108,7 +109,25 @@ type ExportedSettings = {
 	avatar: AvatarState;
 	modules: SettingsState;
 	homeCardLayout: HomeCardLayout;
+	endpointFavorites: EndpointFavoriteId[];
 };
+
+function normalizeEndpointFavorites(value: unknown): EndpointFavoriteId[] {
+	if (!Array.isArray(value)) return [];
+	const knownIds = new Set(endpoints.map((endpoint) => endpoint.id));
+	const assigned = new Set<string>();
+	const favorites: EndpointFavoriteId[] = [];
+
+	for (const item of value) {
+		if (typeof item !== "string" || !knownIds.has(item) || assigned.has(item)) {
+			continue;
+		}
+		assigned.add(item);
+		favorites.push(item);
+	}
+
+	return favorites;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -216,6 +235,7 @@ function parseImportedConfig(raw: string): ExportedSettings {
 		homeCardLayout: normalizeHomeCardLayout(
 			isRecord(config.homeCardLayout) ? config.homeCardLayout : undefined,
 		),
+		endpointFavorites: normalizeEndpointFavorites(config.endpointFavorites),
 	};
 }
 
@@ -260,6 +280,13 @@ export function App() {
 	const [homeCardLayout, setHomeCardLayout] = useState<HomeCardLayout>(() =>
 		normalizeHomeCardLayout(
 			readStoredJson(STORAGE_KEYS.homeCardLayout, defaultHomeCardLayout),
+		),
+	);
+	const [endpointFavorites, setEndpointFavorites] = useState<
+		EndpointFavoriteId[]
+	>(() =>
+		normalizeEndpointFavorites(
+			readStoredJson(STORAGE_KEYS.endpointFavorites, []),
 		),
 	);
 
@@ -375,6 +402,13 @@ export function App() {
 	}, [homeCardLayout]);
 
 	useEffect(() => {
+		writeStoredJson(
+			STORAGE_KEYS.endpointFavorites,
+			normalizeEndpointFavorites(endpointFavorites),
+		);
+	}, [endpointFavorites]);
+
+	useEffect(() => {
 		writeStoredJson(STORAGE_KEYS.avatar, avatar);
 	}, [avatar]);
 
@@ -417,6 +451,7 @@ export function App() {
 		setAvatar(config.avatar);
 		setSettings(config.modules);
 		setHomeCardLayout(config.homeCardLayout);
+		setEndpointFavorites(config.endpointFavorites);
 	};
 
 	const exportConfig = (): ConfigActionResult => {
@@ -438,6 +473,7 @@ export function App() {
 				avatar: DEFAULT_AVATAR_STATE,
 				modules: settings,
 				homeCardLayout: normalizeHomeCardLayout(homeCardLayout),
+				endpointFavorites: normalizeEndpointFavorites(endpointFavorites),
 			},
 		};
 		const blob = new Blob([JSON.stringify(payload, null, 2)], {
@@ -481,6 +517,7 @@ export function App() {
 			avatar: DEFAULT_AVATAR_STATE,
 			modules: DEFAULT_SETTINGS_STATE,
 			homeCardLayout: normalizeHomeCardLayout(defaultHomeCardLayout),
+			endpointFavorites: [],
 		});
 		return { ok: true, message: "已恢复默认设置，并清理本地缓存。" };
 	};
@@ -655,6 +692,8 @@ export function App() {
 						city={city}
 						activeTool={activeTool}
 						setActiveTool={setActiveTool}
+						endpointFavorites={endpointFavorites}
+						setEndpointFavorites={setEndpointFavorites}
 					/>
 				)}
 				{activePage === "settings" && (
@@ -719,6 +758,8 @@ function ToolsPage({
 	city,
 	activeTool,
 	setActiveTool,
+	endpointFavorites,
+	setEndpointFavorites,
 }: {
 	apiBase: string;
 	query: string;
@@ -728,6 +769,8 @@ function ToolsPage({
 	city: string;
 	activeTool: ToolId;
 	setActiveTool: (tool: ToolId) => void;
+	endpointFavorites: EndpointFavoriteId[];
+	setEndpointFavorites: (favorites: EndpointFavoriteId[]) => void;
 }) {
 	return (
 		<section className="page-stack">
@@ -751,7 +794,12 @@ function ToolsPage({
 					</p>
 				</div>
 			)}
-			<EndpointLab apiBase={apiBase} query={query} />
+			<EndpointLab
+				apiBase={apiBase}
+				query={query}
+				favorites={endpointFavorites}
+				setFavorites={setEndpointFavorites}
+			/>
 		</section>
 	);
 }

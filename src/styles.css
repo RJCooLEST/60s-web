@@ -2224,34 +2224,149 @@ main {
 	background: #fbfcfd;
 }
 
-.endpoint-list button {
+.endpoint-favorites {
+	display: grid;
+}
+
+.endpoint-favorites .card-title small {
+	color: var(--muted);
+	font-weight: 800;
+}
+
+.favorite-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 12px;
+	padding: 0 18px 18px;
+}
+
+.favorite-card {
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface-strong);
+}
+
+.favorite-card > button {
+	width: 100%;
+	display: grid;
+	grid-template-columns: 28px minmax(0, 1fr);
+	gap: 10px;
+	align-items: center;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--heading);
+	text-align: left;
+}
+
+.favorite-card-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding-top: 10px;
+	border-top: 1px solid var(--line);
+}
+
+.favorite-card-actions a,
+.favorite-card-actions button,
+.favorite-card-actions span {
+	min-height: 28px;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	border: 0;
+	background: transparent;
+	color: var(--accent-dark);
+	font-size: 13px;
+	font-weight: 800;
+}
+
+.favorite-card-actions span {
+	color: var(--muted);
+}
+
+.favorite-card-actions button {
+	color: var(--muted);
+}
+
+.favorite-empty {
+	margin: 0;
+	padding: 0 18px 18px;
+	color: var(--muted);
+	font-size: 14px;
+	line-height: 1.7;
+}
+
+.endpoint-list-item {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 42px;
+	align-items: stretch;
+	border-bottom: 1px solid #edf1f3;
+}
+
+.endpoint-list-item.active {
+	background: #eaf8f5;
+	color: var(--accent-dark);
+}
+
+.endpoint-choice {
 	width: 100%;
 	min-height: 68px;
 	display: grid;
 	grid-template-columns: 28px minmax(0, 1fr);
 	gap: 10px;
 	align-items: center;
-	padding: 12px 18px;
+	padding: 12px 0 12px 18px;
 	border: 0;
-	border-bottom: 1px solid #edf1f3;
 	background: transparent;
+	color: inherit;
 	text-align: left;
 }
 
-.endpoint-list button.active {
-	background: #eaf8f5;
-	color: var(--accent-dark);
+.favorite-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-width: 34px;
+	min-height: 34px;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 800;
+}
+
+.endpoint-list-item .favorite-toggle {
+	align-self: center;
+	justify-self: center;
+}
+
+.favorite-toggle.active {
+	color: #d97706;
+}
+
+.favorite-toggle.active svg {
+	fill: currentColor;
 }
 
 .endpoint-list b,
-.endpoint-list small {
+.endpoint-list small,
+.favorite-card b,
+.favorite-card small {
 	display: block;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.endpoint-list small {
+.endpoint-list small,
+.favorite-card small {
 	margin-top: 4px;
 	color: var(--muted);
 }
@@ -2282,6 +2397,14 @@ main {
 	gap: 6px;
 	color: var(--accent);
 	font-weight: 800;
+}
+
+.runner-head-actions {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: 10px;
 }
 
 .disabled-link {
@@ -2950,15 +3073,19 @@ footer strong {
 	background: rgba(9, 20, 18, 0.86);
 }
 
-.theme-dark .endpoint-list button {
+.theme-dark .endpoint-list-item {
 	border-bottom-color: var(--line);
 	color: var(--text);
 }
 
-.theme-dark .endpoint-list button.active,
+.theme-dark .endpoint-list-item.active,
 .theme-dark .topbar nav button.active {
 	background: rgba(55, 216, 197, 0.12);
 	color: var(--accent-dark);
+}
+
+.theme-dark .favorite-card {
+	background: var(--surface-strong);
 }
 
 .theme-dark .ghost-button {

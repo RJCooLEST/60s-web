@@ -17,6 +17,7 @@ export type SettingsState = {
 export type PageId = "home" | "hot" | "news" | "weather" | "tools" | "settings";
 export type ToolId = "translate" | "qrcode" | "password" | "palette";
 export type SearchProviderId = "site" | "bing" | "google" | "chatgpt" | "doubao";
+export type EndpointFavoriteId = string;
 export type WallpaperMode = "default" | "mint" | "paper" | "dawn" | "custom";
 export type ChromeTheme = "classic" | "floating" | "minimal";
 export type ColorTheme = "light" | "dark";
