@@ -1,4 +1,4 @@
-const CACHE_NAME = "60s-web-static-v0.0.7";
+const CACHE_NAME = "60s-web-static-v0.1.0";
 const APP_SHELL = [
 	"/",
 	"/index.html",
