@@ -21,6 +21,7 @@ import type { EndpointDefinition } from "./api";
 import type {
 	ChromeTheme,
 	ColorTheme,
+	MobileNavMode,
 	QuickActionDefinition,
 	QuickFavoriteId,
 	SearchProviderId,
@@ -39,6 +40,7 @@ export const STORAGE_KEYS = {
 	wallpaper: "60s-web:wallpaper",
 	chromeTheme: "60s-web:chrome-theme",
 	colorTheme: "60s-web:color-theme",
+	mobileNavMode: "60s-web:mobile-nav-mode",
 	homeCardLayout: "60s-web:home-card-layout",
 	endpointFavorites: "60s-web:endpoint-favorites",
 	quickFavorites: "60s-web:quick-favorites",
@@ -194,6 +196,16 @@ export const colorThemes: Array<{
 }> = [
 	{ id: "light", label: "浅色", sub: "清爽白昼" },
 	{ id: "dark", label: "暗色", sub: "夜间低亮" },
+];
+
+export const mobileNavModes: Array<{
+	id: MobileNavMode;
+	label: string;
+	sub: string;
+}> = [
+	{ id: "auto", label: "自动", sub: "PWA 底部，浏览器顶部" },
+	{ id: "bottom", label: "底部导航", sub: "单手操作更顺手" },
+	{ id: "top", label: "顶部导航", sub: "释放底部空间" },
 ];
 
 export const toolDefinitions: ToolDefinition[] = [

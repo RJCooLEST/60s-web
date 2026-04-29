@@ -70,6 +70,14 @@ export function applyServiceWorkerUpdate(
 	registration?.waiting?.postMessage({ type: "SKIP_WAITING" });
 }
 
+export function isStandaloneDisplay() {
+	if (typeof window === "undefined") return false;
+	return (
+		window.matchMedia("(display-mode: standalone)").matches ||
+		Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
+	);
+}
+
 export function shouldShowIosInstallHint() {
 	if (typeof window === "undefined") return false;
 	const userAgent = window.navigator.userAgent;
@@ -79,9 +87,6 @@ export function shouldShowIosInstallHint() {
 			window.navigator.maxTouchPoints > 1);
 	const isSafari =
 		/Safari/.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(userAgent);
-	const isStandalone =
-		window.matchMedia("(display-mode: standalone)").matches ||
-		Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
 
-	return isIos && isSafari && !isStandalone;
+	return isIos && isSafari && !isStandaloneDisplay();
 }

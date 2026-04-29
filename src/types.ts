@@ -33,6 +33,7 @@ export type QuickFavoriteId =
 export type WallpaperMode = "default" | "mint" | "paper" | "dawn" | "custom";
 export type ChromeTheme = "classic" | "floating" | "minimal";
 export type ColorTheme = "light" | "dark";
+export type MobileNavMode = "auto" | "bottom" | "top";
 
 export type AvatarState = {
 	mode: "default" | "upload" | "qq";

@@ -29,7 +29,7 @@ import { Header } from "./components/Header";
 import { HotPage } from "./components/Hot";
 import { MarketStrip } from "./components/HomeCards";
 import { HomePage } from "./components/HomePage";
-import { MobileBottomNav } from "./components/MobileBottomNav";
+import { MobileNav } from "./components/MobileBottomNav";
 import { NewsPage } from "./components/News";
 import { PwaStatusBar } from "./components/PwaStatusBar";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -45,6 +45,7 @@ import {
 	colorThemes,
 	defaultQuickFavorites,
 	hotTabs,
+	mobileNavModes,
 	quickActions,
 	searchProviders,
 	STORAGE_KEYS,
@@ -64,6 +65,7 @@ import type {
 	ChromeTheme,
 	ColorTheme,
 	EndpointFavoriteId,
+	MobileNavMode,
 	PageId,
 	QuickActionDefinition,
 	QuickFavoriteId,
@@ -79,6 +81,7 @@ import {
 } from "./utils";
 import {
 	applyServiceWorkerUpdate,
+	isStandaloneDisplay,
 	registerServiceWorker,
 	shouldShowIosInstallHint,
 } from "./pwa";
@@ -87,6 +90,7 @@ const DEFAULT_CITY = "上海";
 const DEFAULT_SEARCH_PROVIDER: SearchProviderId = "site";
 const DEFAULT_CHROME_THEME: ChromeTheme = "minimal";
 const DEFAULT_COLOR_THEME: ColorTheme = "light";
+const DEFAULT_MOBILE_NAV_MODE: MobileNavMode = "auto";
 const DEFAULT_SETTINGS_STATE: SettingsState = {
 	showWeather: true,
 	showHot: true,
@@ -108,6 +112,7 @@ type ExportedSettings = {
 	searchProvider: SearchProviderId;
 	chromeTheme: ChromeTheme;
 	colorTheme: ColorTheme;
+	mobileNavMode: MobileNavMode;
 	wallpaper: WallpaperState;
 	avatar: AvatarState;
 	modules: SettingsState;
@@ -182,6 +187,23 @@ function readEnum<T extends string>(
 	throw new Error(`${label} 配置值无效`);
 }
 
+function hasStored60sSettings() {
+	if (typeof window === "undefined") return false;
+	return Object.keys(window.localStorage).some((key) =>
+		key.startsWith("60s-web:"),
+	);
+}
+
+function readStoredMobileNavMode(): MobileNavMode {
+	if (typeof window === "undefined") return DEFAULT_MOBILE_NAV_MODE;
+	const value = window.localStorage.getItem(STORAGE_KEYS.mobileNavMode);
+	const allowed = mobileNavModes.map((item) => item.id);
+	if (value && allowed.includes(value as MobileNavMode)) {
+		return value as MobileNavMode;
+	}
+	return hasStored60sSettings() ? "bottom" : DEFAULT_MOBILE_NAV_MODE;
+}
+
 function parseImportedConfig(raw: string): ExportedSettings {
 	let parsed: unknown;
 	try {
@@ -232,6 +254,12 @@ function parseImportedConfig(raw: string): ExportedSettings {
 			colorThemes.map((item) => item.id),
 			DEFAULT_COLOR_THEME,
 			"明暗主题",
+		),
+		mobileNavMode: readEnum(
+			config.mobileNavMode,
+			mobileNavModes.map((item) => item.id),
+			DEFAULT_MOBILE_NAV_MODE,
+			"移动端导航",
 		),
 		wallpaper:
 			wallpaperMode === "custom" ? DEFAULT_WALLPAPER_STATE : { mode: wallpaperMode },
@@ -294,6 +322,9 @@ export function App() {
 		() =>
 			readStoredValue(STORAGE_KEYS.colorTheme, DEFAULT_COLOR_THEME) as ColorTheme,
 	);
+	const [mobileNavMode, setMobileNavMode] = useState<MobileNavMode>(
+		readStoredMobileNavMode,
+	);
 	const [hotTab, setHotTab] = useState(hotTabs[1]);
 	const [avatar, setAvatar] = useState<AvatarState>(() =>
 		readStoredJson(STORAGE_KEYS.avatar, DEFAULT_AVATAR_STATE),
@@ -327,6 +358,7 @@ export function App() {
 	const [serviceWorkerUpdate, setServiceWorkerUpdate] =
 		useState<ServiceWorkerRegistration | null>(null);
 	const [showInstallHint, setShowInstallHint] = useState(false);
+	const [isStandalone, setIsStandalone] = useState(isStandaloneDisplay);
 
 	const daily = useApi<DailyNews>(
 		apiBase,
@@ -470,6 +502,10 @@ export function App() {
 	}, [colorTheme]);
 
 	useEffect(() => {
+		writeStoredValue(STORAGE_KEYS.mobileNavMode, mobileNavMode);
+	}, [mobileNavMode]);
+
+	useEffect(() => {
 		const updateOnlineState = () => setIsOffline(!navigator.onLine);
 		window.addEventListener("online", updateOnlineState);
 		window.addEventListener("offline", updateOnlineState);
@@ -484,6 +520,14 @@ export function App() {
 
 	useEffect(() => {
 		setShowInstallHint(shouldShowIosInstallHint());
+	}, []);
+
+	useEffect(() => {
+		const query = window.matchMedia("(display-mode: standalone)");
+		const updateStandalone = () => setIsStandalone(isStandaloneDisplay());
+		query.addEventListener("change", updateStandalone);
+		updateStandalone();
+		return () => query.removeEventListener("change", updateStandalone);
 	}, []);
 
 	useEffect(() => {
@@ -509,6 +553,7 @@ export function App() {
 		setSearchProvider(config.searchProvider);
 		setChromeTheme(config.chromeTheme);
 		setColorTheme(config.colorTheme);
+		setMobileNavMode(config.mobileNavMode);
 		setWallpaper(config.wallpaper);
 		setAvatar(config.avatar);
 		setSettings(config.modules);
@@ -532,6 +577,7 @@ export function App() {
 				searchProvider,
 				chromeTheme,
 				colorTheme,
+				mobileNavMode,
 				wallpaper: exportWallpaper,
 				avatar: DEFAULT_AVATAR_STATE,
 				modules: settings,
@@ -577,6 +623,7 @@ export function App() {
 			searchProvider: DEFAULT_SEARCH_PROVIDER,
 			chromeTheme: DEFAULT_CHROME_THEME,
 			colorTheme: DEFAULT_COLOR_THEME,
+			mobileNavMode: DEFAULT_MOBILE_NAV_MODE,
 			wallpaper: DEFAULT_WALLPAPER_STATE,
 			avatar: DEFAULT_AVATAR_STATE,
 			modules: DEFAULT_SETTINGS_STATE,
@@ -602,6 +649,13 @@ export function App() {
 		}
 		setActivePage(target.page);
 	};
+
+	const resolvedMobileNav =
+		mobileNavMode === "auto"
+			? isStandalone
+				? "bottom"
+				: "top"
+			: mobileNavMode;
 
 	const reloadAll = () => {
 		daily.reload();
@@ -635,7 +689,7 @@ export function App() {
 
 	return (
 		<div
-			className={`app-shell chrome-${chromeTheme} theme-${colorTheme}`}
+			className={`app-shell chrome-${chromeTheme} theme-${colorTheme} mobile-nav-${resolvedMobileNav}`}
 			style={getWallpaperStyle(wallpaper, colorTheme)}
 		>
 			<Header
@@ -646,6 +700,13 @@ export function App() {
 				colorTheme={colorTheme}
 				setColorTheme={setColorTheme}
 			/>
+			{resolvedMobileNav === "top" && (
+				<MobileNav
+					activePage={activePage}
+					setActivePage={setActivePage}
+					variant="top"
+				/>
+			)}
 			<PwaStatusBar
 				isOffline={isOffline}
 				updateReady={Boolean(serviceWorkerUpdate)}
@@ -767,6 +828,8 @@ export function App() {
 							setChromeTheme={setChromeTheme}
 							colorTheme={colorTheme}
 							setColorTheme={setColorTheme}
+							mobileNavMode={mobileNavMode}
+							setMobileNavMode={setMobileNavMode}
 							onExportConfig={exportConfig}
 							onImportConfig={importConfig}
 							onResetConfig={resetConfig}
@@ -785,7 +848,13 @@ export function App() {
 				updatedAt={daily.updatedAt}
 				isOffline={isOffline}
 			/>
-			<MobileBottomNav activePage={activePage} setActivePage={setActivePage} />
+			{resolvedMobileNav === "bottom" && (
+				<MobileNav
+					activePage={activePage}
+					setActivePage={setActivePage}
+					variant="bottom"
+				/>
+			)}
 		</div>
 	);
 }

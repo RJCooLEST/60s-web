@@ -3,15 +3,20 @@ import type { PageId } from "../types";
 
 const mobilePages: PageId[] = ["home", "hot", "news", "weather", "tools"];
 
-export function MobileBottomNav({
+export function MobileNav({
 	activePage,
 	setActivePage,
+	variant,
 }: {
 	activePage: PageId;
 	setActivePage: (page: PageId) => void;
+	variant: "bottom" | "top";
 }) {
 	return (
-		<nav className="mobile-bottom-nav" aria-label="移动端主导航">
+		<nav
+			className={`mobile-nav mobile-${variant}-nav`}
+			aria-label="移动端主导航"
+		>
 			{nav
 				.filter((item) => mobilePages.includes(item.id))
 				.map((item) => {

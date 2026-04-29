@@ -9,16 +9,24 @@ import {
 	Moon,
 	RotateCcw,
 	Settings,
+	Smartphone,
 	Star,
 	Sun,
 	Wifi,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { fetchApi, getApiBaseError } from "../api";
-import { chromeThemes, colorThemes, quickActions, wallpaperOptions } from "../config";
+import {
+	chromeThemes,
+	colorThemes,
+	mobileNavModes,
+	quickActions,
+	wallpaperOptions,
+} from "../config";
 import type {
 	ChromeTheme,
 	ColorTheme,
+	MobileNavMode,
 	QuickActionDefinition,
 	QuickFavoriteId,
 	SettingsState,
@@ -42,6 +50,8 @@ export function SettingsPanel({
 	setChromeTheme,
 	colorTheme,
 	setColorTheme,
+	mobileNavMode,
+	setMobileNavMode,
 	onExportConfig,
 	onImportConfig,
 	onResetConfig,
@@ -60,6 +70,8 @@ export function SettingsPanel({
 	setChromeTheme?: (value: ChromeTheme) => void;
 	colorTheme?: ColorTheme;
 	setColorTheme?: (value: ColorTheme) => void;
+	mobileNavMode?: MobileNavMode;
+	setMobileNavMode?: (value: MobileNavMode) => void;
 	onExportConfig?: () => ConfigActionResult;
 	onImportConfig?: (raw: string) => ConfigActionResult;
 	onResetConfig?: () => ConfigActionResult;
@@ -273,6 +285,34 @@ export function SettingsPanel({
 										<span>
 											<b>{theme.label}</b>
 											<small>{theme.sub}</small>
+										</span>
+									</button>
+								))}
+							</div>
+						</>
+					)}
+					{mobileNavMode && setMobileNavMode && (
+						<>
+							<div className="settings-subtitle">
+								<span>
+									<Smartphone size={18} /> 移动端导航
+								</span>
+							</div>
+							<div className="mobile-nav-mode-grid">
+								{mobileNavModes.map((mode) => (
+									<button
+										type="button"
+										key={mode.id}
+										className={mobileNavMode === mode.id ? "active" : ""}
+										onClick={() => setMobileNavMode(mode.id)}
+									>
+										<i className={`mobile-nav-preview mobile-nav-${mode.id}`}>
+											<span />
+											<b />
+										</i>
+										<span>
+											<b>{mode.label}</b>
+											<small>{mode.sub}</small>
 										</span>
 									</button>
 								))}
