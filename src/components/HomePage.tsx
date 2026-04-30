@@ -8,7 +8,13 @@ import {
 	type WeatherForecast,
 	type WeatherRealtime,
 } from "../api";
-import { Check, PencilLine } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	Check,
+	GripVertical,
+	PencilLine,
+} from "lucide-react";
 import {
 	getHomeCards,
 	moveHomeCard,
@@ -133,6 +139,9 @@ export function HomePage({
 	const isInteractiveDragTarget = (target: HTMLElement) =>
 		Boolean(target.closest("a, button, input, textarea, select, label"));
 
+	const isDragHandleTarget = (target: HTMLElement) =>
+		Boolean(target.closest("[data-home-drag-handle]"));
+
 	const handlePointerDown = (
 		event: PointerEvent<HTMLDivElement>,
 		cardId: HomeCardId,
@@ -142,10 +151,11 @@ export function HomePage({
 		const target = event.target as HTMLElement;
 		if (
 			event.pointerType === "mouse" ||
-			isInteractiveDragTarget(target)
+			!isDragHandleTarget(target)
 		) {
 			return;
 		}
+		event.preventDefault();
 		event.currentTarget.setPointerCapture(event.pointerId);
 		setPointerDrag({
 			cardId,
@@ -205,7 +215,12 @@ export function HomePage({
 	) => {
 		if (!isEditing) return;
 		const target = event.target as HTMLElement;
-		if (event.button !== 0 || isInteractiveDragTarget(target)) return;
+		if (
+			event.button !== 0 ||
+			(isInteractiveDragTarget(target) && !isDragHandleTarget(target))
+		) {
+			return;
+		}
 		const startX = event.clientX;
 		const startY = event.clientY;
 		let isActive = false;
@@ -252,6 +267,20 @@ export function HomePage({
 
 		window.addEventListener("mousemove", handleMouseMove);
 		window.addEventListener("mouseup", handleMouseUp);
+	};
+
+	const moveCardByStep = (
+		cardId: HomeCardId,
+		column: HomeCardColumn,
+		step: -1 | 1,
+	) => {
+		const index = homeCardLayout[column].indexOf(cardId);
+		const nextIndex = index + step;
+		if (index < 0 || nextIndex < 0 || nextIndex >= homeCardLayout[column].length) {
+			return;
+		}
+		const insertIndex = step > 0 ? index + 2 : nextIndex;
+		setHomeCardLayout(moveHomeCard(homeCardLayout, cardId, column, insertIndex));
 	};
 
 	const renderHomeCard = (cardId: HomeCardId) => {
@@ -316,6 +345,8 @@ export function HomePage({
 					const isDragging = draggedCard?.cardId === card.id;
 					const isDropTarget =
 						dropTarget?.column === column && dropTarget.index === index;
+					const canMoveUp = index > 0;
+					const canMoveDown = index >= 0 && index < homeCardLayout[column].length - 1;
 					return (
 						<div
 							className={`home-card-slot ${isDragging ? "is-dragging" : ""} ${
@@ -335,6 +366,37 @@ export function HomePage({
 								handleMouseDown(event, card.id, column)
 							}
 						>
+							{isEditing && (
+								<div className="home-card-edit-controls">
+									<button
+										type="button"
+										className="home-card-drag-handle"
+										aria-label={`拖动${card.label}排序`}
+										title="拖动排序"
+										data-home-drag-handle
+									>
+										<GripVertical size={16} />
+									</button>
+									<button
+										type="button"
+										aria-label={`${card.label}上移`}
+										title="上移"
+										disabled={!canMoveUp}
+										onClick={() => moveCardByStep(card.id, column, -1)}
+									>
+										<ArrowUp size={15} />
+									</button>
+									<button
+										type="button"
+										aria-label={`${card.label}下移`}
+										title="下移"
+										disabled={!canMoveDown}
+										onClick={() => moveCardByStep(card.id, column, 1)}
+									>
+										<ArrowDown size={15} />
+									</button>
+								</div>
+							)}
 							{renderHomeCard(card.id)}
 						</div>
 					);

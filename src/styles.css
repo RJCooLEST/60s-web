@@ -761,19 +761,66 @@ main {
 }
 
 .home-card-slot.is-editable {
-	cursor: grab;
-	touch-action: pan-y;
+	cursor: default;
 	user-select: none;
-}
-
-.home-card-slot.is-editable:active {
-	cursor: grabbing;
 }
 
 .home-card-slot.is-dragging {
 	opacity: 0.48;
 	pointer-events: none;
 	transform: scale(0.985);
+}
+
+.home-card-edit-controls {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 8;
+	display: flex;
+	gap: 4px;
+	padding: 4px;
+	border: 1px solid rgba(214, 224, 235, 0.9);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.94);
+	box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+	backdrop-filter: blur(12px);
+}
+
+.home-card-edit-controls button {
+	width: 30px;
+	height: 30px;
+	border: 0;
+	border-radius: 999px;
+	display: inline-grid;
+	place-items: center;
+	background: transparent;
+	color: #64748b;
+	cursor: pointer;
+	transition:
+		background 0.16s ease,
+		color 0.16s ease,
+		transform 0.16s ease;
+}
+
+.home-card-edit-controls button:not(:disabled):hover,
+.home-card-edit-controls button:not(:disabled):focus-visible {
+	background: rgba(15, 155, 142, 0.12);
+	color: var(--accent);
+}
+
+.home-card-edit-controls button:disabled {
+	cursor: not-allowed;
+	opacity: 0.36;
+}
+
+.home-card-drag-handle {
+	cursor: grab;
+	touch-action: none;
+}
+
+.home-card-drag-handle:active {
+	cursor: grabbing;
+	transform: scale(0.96);
 }
 
 .home-drop-column.is-editing {
@@ -1385,6 +1432,11 @@ main {
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.hot-board,
+.mini-hot-card {
+	overflow: visible;
+}
+
 .compact-rank {
 	grid-template-columns: 1fr;
 }
@@ -1392,15 +1444,18 @@ main {
 .rank-list li {
 	display: grid;
 	grid-template-columns: 28px minmax(0, 1fr) 72px;
-	align-items: center;
+	align-items: start;
 	gap: 8px;
 	min-height: 32px;
+	padding: 4px 0;
+	position: relative;
 }
 
 .rank-list li b {
 	color: #8a95a3;
 	font-size: 20px;
 	font-style: italic;
+	line-height: 1.35;
 }
 
 .rank-list li:nth-child(1) b,
@@ -1410,15 +1465,68 @@ main {
 }
 
 .rank-list a {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	overflow: visible;
+	text-overflow: clip;
+	white-space: normal;
+	word-break: break-word;
+	line-height: 1.45;
 }
 
 .rank-list span {
 	color: #8a95a3;
 	font-size: 13px;
+	line-height: 1.45;
 	text-align: right;
+}
+
+@media (min-width: 761px) {
+	.rank-list li {
+		align-items: center;
+		padding: 0;
+	}
+
+	.rank-list a {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		word-break: normal;
+	}
+
+	.rank-list li[data-rank-title]:hover,
+	.rank-list li[data-rank-title]:focus-within {
+		z-index: 20;
+	}
+
+	.rank-list li[data-rank-title]:hover::after,
+	.rank-list li[data-rank-title]:focus-within::after {
+		content: attr(data-rank-title);
+		position: absolute;
+		z-index: 21;
+		top: calc(100% + 8px);
+		left: 36px;
+		width: max-content;
+		max-width: min(520px, calc(100vw - 96px));
+		padding: 10px 12px;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--surface);
+		box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+		color: var(--heading);
+		font-size: 14px;
+		font-style: normal;
+		font-weight: 700;
+		line-height: 1.5;
+		text-align: left;
+		white-space: normal;
+		word-break: break-word;
+		pointer-events: none;
+	}
+
+	.rank-list li[data-rank-title]:nth-last-child(-n + 3):hover::after,
+	.rank-list li[data-rank-title]:nth-last-child(-n + 3):focus-within::after {
+		top: auto;
+		bottom: calc(100% + 8px);
+	}
 }
 
 .entertainment {
@@ -3197,6 +3305,21 @@ footer strong {
 
 .theme-dark .home-card-item {
 	background: rgba(255, 255, 255, 0.055);
+}
+
+.theme-dark .home-card-edit-controls {
+	background: rgba(15, 23, 42, 0.9);
+	border-color: var(--line);
+}
+
+.theme-dark .home-card-edit-controls button {
+	color: var(--muted);
+}
+
+.theme-dark .home-card-edit-controls button:not(:disabled):hover,
+.theme-dark .home-card-edit-controls button:not(:disabled):focus-visible {
+	background: rgba(55, 216, 197, 0.14);
+	color: var(--accent-dark);
 }
 
 .theme-dark .home-card-item em {

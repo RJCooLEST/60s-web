@@ -6,6 +6,10 @@ import type { ApiState } from "../types";
 import { skeletonItems } from "../utils";
 import { CardTitle, EmptyState, Status } from "./ui";
 
+function getHotTitle(item: HotItem, fallback: string) {
+	return item.title || item.name || item.movie_name || fallback;
+}
+
 export function HotPage({
 	apiBase,
 }: {
@@ -70,23 +74,27 @@ function HotMiniBoard({
 				<EmptyState title="暂无热榜数据" desc="上游返回了空列表，稍后刷新即可。" />
 			) : (
 				<ol className="rank-list compact-rank">
-					{displayItems.map((item, index) => (
-						<li key={`${item.title || item.name || item.movie_name}-${index}`}>
-							<b>{index + 1}</b>
-							<a
-								href={item.link || item.url || "#"}
-								target="_blank"
-								rel="noreferrer"
-							>
-								{item.title || item.name || item.movie_name || "正在读取..."}
-							</a>
-							<span>
-								{formatHotValue(
-									item.hot_value ?? item.hot ?? item.heat ?? item.score,
-								)}
-							</span>
-						</li>
-					))}
+					{displayItems.map((item, index) => {
+						const titleText = getHotTitle(item, "正在读取...");
+						return (
+							<li key={`${titleText}-${index}`} data-rank-title={titleText}>
+								<b>{index + 1}</b>
+								<a
+									href={item.link || item.url || "#"}
+									target="_blank"
+									rel="noreferrer"
+									title={titleText}
+								>
+									{titleText}
+								</a>
+								<span>
+									{formatHotValue(
+										item.hot_value ?? item.hot ?? item.heat ?? item.score,
+									)}
+								</span>
+							</li>
+						);
+					})}
 				</ol>
 			)}
 		</article>
@@ -140,23 +148,27 @@ export function HotBoard({
 				/>
 			) : (
 				<ol className="rank-list">
-					{displayItems.map((item, index) => (
-						<li key={`${item.title || item.name || item.movie_name}-${index}`}>
-							<b>{index + 1}</b>
-							<a
-								href={item.link || item.url || "#"}
-								target="_blank"
-								rel="noreferrer"
-							>
-								{item.title || item.name || item.movie_name || "正在读取热榜..."}
-							</a>
-							<span>
-								{formatHotValue(
-									item.hot_value ?? item.hot ?? item.heat ?? item.score,
-								)}
-							</span>
-						</li>
-					))}
+					{displayItems.map((item, index) => {
+						const titleText = getHotTitle(item, "正在读取热榜...");
+						return (
+							<li key={`${titleText}-${index}`} data-rank-title={titleText}>
+								<b>{index + 1}</b>
+								<a
+									href={item.link || item.url || "#"}
+									target="_blank"
+									rel="noreferrer"
+									title={titleText}
+								>
+									{titleText}
+								</a>
+								<span>
+									{formatHotValue(
+										item.hot_value ?? item.hot ?? item.heat ?? item.score,
+									)}
+								</span>
+							</li>
+						);
+					})}
 				</ol>
 			)}
 		</article>
